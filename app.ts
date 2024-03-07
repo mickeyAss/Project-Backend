@@ -1,5 +1,7 @@
 import express from "express";
 import { router as index } from "./api/index";
+
+import { router as imgrandom } from "./api/imgrandom";
 import bodyParser from "body-parser";
 import cors from "cors";
 
@@ -15,4 +17,5 @@ app.use(bodyParser.json());
 app.use(bodyParser.text()); 
 
 app.use("/user", index);
+app.use("/imgrandom", imgrandom);
 
