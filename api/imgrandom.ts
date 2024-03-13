@@ -34,7 +34,7 @@ router.post("/vote", (req, res) => {
 });
 
 router.get("/votesome",(req,res)=>{
-    const sql = "SELECT bigbike.*,vote.*, COALESCE(vote.score ,0) AS score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk"; 
+    const sql = "SELECT bigbike.*,vote.*, COALESCE(vote.score ,100) AS score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk"; 
     conn.query(sql,(err,result)=>{
         if(err){
             res.json(err);  
@@ -82,6 +82,29 @@ router.get("/calculate-score/:bid", (req, res) => {
       } else {
         // หากไม่มีผลลัพธ์ให้ส่งคะแนนรวมเป็น 0
         res.status(200).json({ bid: bid, total_score: 0 });
+      }
+    }
+  });
+});
+
+router.get("/getBid/:bid", (req, res) => {
+  let bid = req.params.bid;
+
+  // คำสั่ง SQL สำหรับดึงข้อมูลของ bid ที่ระบุ
+  const sql = "SELECT * FROM bigbike WHERE bid = ?";
+
+  conn.query(sql, [bid], (err, result) => {
+    if (err) {
+      console.error("Error fetching data for bid:", bid, err);
+      res.status(500).json({ error: "Error fetching data" });
+    } else {
+      // ตรวจสอบว่ามีข้อมูลของ bid ที่ระบุหรือไม่
+      if (result.length > 0) {
+        // ส่งข้อมูลของ bid ที่ระบุกลับไป
+        res.status(200).json(result[0]);
+      } else {
+        // หากไม่พบข้อมูลของ bid ที่ระบุ
+        res.status(404).json({ error: "Bid not found" });
       }
     }
   });
