@@ -8,12 +8,15 @@ router.get("/", (req, res) => {
     });
   });
 
+
+  
 // POST route เพื่อรับคะแนนที่โหวตและเพิ่มข้อมูลลงในฐานข้อมูล
 router.post("/vote", (req, res) => {
-  const {uid_fk, bid_fk, score, date } = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
+  const {uid_fk, bid_fk, score , date } = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
 
   // ตรวจสอบข้อมูลที่ได้รับ
   console.log("Received data:",uid_fk, bid_fk, score, date);
+  
 
   // เพิ่มข้อมูล vote ลงในฐานข้อมูลพร้อมเวลาและวันที่
   conn.query("INSERT INTO vote (uid_fk ,bid_fk, score, date) VALUES (?, ?, ?, ?)", [uid_fk, bid_fk, score, date], (err, result) => {
@@ -36,4 +39,24 @@ router.get("/votesome",(req,res)=>{
             res.json(result)
         }
     })
+});
+
+// POST route เพื่อรับคะแนนรวมและอัปเดตลงในฐานข้อมูล bigbike
+router.put("/updatescore/:bid", (req, res) => {
+  let bid = +req.params.bid;
+  let scsum = req.body.scsum;
+
+  // ตรวจสอบข้อมูลที่ได้รับ
+  console.log("Received data:", bid, scsum);
+
+  // อัปเดตคะแนนรวมลงในฐานข้อมูล bigbike
+  conn.query("UPDATE bigbike SET scsum = ? WHERE bid = ?", [scsum,bid], (err, result) => {
+    if (err) {
+      console.error("Error updating total score:", err);
+      res.status(500).json({ error: "Error updating total score" });
+    } else {
+      console.log("Total score updated successfully");
+      res.status(200).json({ message: "Total score updated successfully" });
+    }
+  });
 });

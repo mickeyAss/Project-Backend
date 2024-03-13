@@ -3,7 +3,6 @@ import { conn } from "../dbconnect";
 export const router = express.Router();
 var jwt = require('jsonwebtoken');
 const secret = 'Fullstack-Login-2021'
-import multer from "multer";
 
 router.get("/", (req, res) => {
   conn.query("SELECT * FROM `users`", (err, result) => {
