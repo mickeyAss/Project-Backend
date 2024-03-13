@@ -60,3 +60,26 @@ router.put("/updatescore/:bid", (req, res) => {
     }
   });
 });
+
+router.get("/calculate-score/:bid", (req, res) => {
+  let bid = req.params.bid;
+
+  // คำสั่ง SQL สำหรับคำนวณคะแนนรวมสำหรับแต่ละ bid
+  const sql = "SELECT bid_fk, SUM(score) AS total_score FROM vote WHERE bid_fk = ? GROUP BY bid_fk";
+
+  conn.query(sql, [bid], (err, result) => {
+    if (err) {
+      console.error("Error calculating total score:", err);
+      res.status(500).json({ error: "Error calculating total score" });
+    } else {
+      // ตรวจสอบว่ามีผลลัพธ์หรือไม่
+      if (result.length > 0) {
+        // ส่งข้อมูลคะแนนรวมกลับไป
+        res.status(200).json({ bid: bid, total_score: result[0].total_score });
+      } else {
+        // หากไม่มีผลลัพธ์ให้ส่งคะแนนรวมเป็น 0
+        res.status(200).json({ bid: bid, total_score: 0 });
+      }
+    }
+  });
+});
