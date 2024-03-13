@@ -3,12 +3,15 @@ import { conn } from "../dbconnect";
 export const router = express.Router();
 
 router.get("/", (req, res) => {
-    conn.query("SELECT * FROM `bigbike`", (err, result) => {
+  conn.query("SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10", (err, result) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      res.status(500).json({ error: "Error fetching data" });
+    } else {
       res.json(result);
-    });
+    }
   });
-
-
+})
   
 // POST route เพื่อรับคะแนนที่โหวตและเพิ่มข้อมูลลงในฐานข้อมูล
 router.post("/vote", (req, res) => {
@@ -83,3 +86,5 @@ router.get("/calculate-score/:bid", (req, res) => {
     }
   });
 });
+
+
