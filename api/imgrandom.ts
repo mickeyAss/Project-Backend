@@ -2,16 +2,6 @@ import express from "express";
 import { conn } from "../dbconnect";
 export const router = express.Router();
 
-router.get("/", (req, res) => {
-  conn.query("SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10", (err, result) => {
-    if (err) {
-      console.error("Error fetching data:", err);
-      res.status(500).json({ error: "Error fetching data" });
-    } else {
-      res.json(result);
-    }
-  });
-})
   
 // POST route เพื่อรับคะแนนที่โหวตและเพิ่มข้อมูลลงในฐานข้อมูล
 router.post("/vote", (req, res) => {
@@ -64,6 +54,7 @@ router.put("/updatescore/:bid", (req, res) => {
   });
 });
 
+//คำนวณคะแนนรวม
 router.get("/calculate-score/:bid", (req, res) => {
   let bid = req.params.bid;
 
@@ -87,6 +78,19 @@ router.get("/calculate-score/:bid", (req, res) => {
   });
 });
 
+//ดึงข้อมูลจากมากไปน้อยแค่10อันดับ
+router.get("/", (req, res) => {
+  conn.query("SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10", (err, result) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      res.status(500).json({ error: "Error fetching data" });
+    } else {
+      res.json(result);
+    }
+  });
+})
+
+//ดึงข้อมูลของแต่ละ bid
 router.get("/getBid/:bid", (req, res) => {
   let bid = req.params.bid;
 
@@ -106,6 +110,28 @@ router.get("/getBid/:bid", (req, res) => {
         // หากไม่พบข้อมูลของ bid ที่ระบุ
         res.status(404).json({ error: "Bid not found" });
       }
+    }
+  });
+});
+
+
+router.get("/beforeDay", (req, res) => {
+  const today = new Date();
+  const sql = `
+    SELECT bigbike.*, 
+           SUM(CASE WHEN DATE(vote.date) != CURDATE() THEN COALESCE(vote.score, 0) ELSE 0 END) AS total_score
+    FROM bigbike
+    LEFT JOIN vote ON bigbike.bid = vote.bid_fk
+    GROUP BY bigbike.bid
+    ORDER BY total_score DESC
+    LIMIT 10
+  `;
+  conn.query(sql, (err, result) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      res.status(500).json({ error: "Error fetching data" });
+    } else {
+      res.json(result);
     }
   });
 });
