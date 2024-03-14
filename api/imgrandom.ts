@@ -142,11 +142,11 @@ router.get("/scores-last-7-days/:bid", (req, res) => {
   // คำสั่ง SQL สำหรับค้นหาคะแนนรวมของแต่ละ bid ในช่วง 7 วันย้อนหลัง
   const sql = `
     SELECT bid_fk,
-           DATE(date) AS voting_date,
+           DAY(DATE(date)) AS voting_day,
            SUM(score) AS total_score_last_7_days
     FROM vote
     WHERE bid_fk = ? AND DATE(date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND CURDATE()
-    GROUP BY bid_fk, DATE(date)
+    GROUP BY bid_fk, DAY(DATE(date))
   `;
   
   conn.query(sql, [bid], (err, result) => {
