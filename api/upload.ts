@@ -4,6 +4,7 @@ export const router = express.Router();
 import path from "path";
 import multer from "multer";
 
+
 //1.connect firebase
 import { initializeApp } from "firebase/app";
 import {
@@ -45,26 +46,35 @@ class FileMiddleware {
 // POST /upload
 const fileUpload = new FileMiddleware();
 router.post("/", fileUpload.diskLoader.single("file"), async (req, res) => {
+  try {
+    const filename = Date.now() + "-" + Math.round(Math.random() * 10000) + ".png";
 
-  const filename = Date.now() + "-" + Math.round(Math.random() * 10000) + ".png";
+    // Define saving filename on Firebase storage
+    const storageRef = ref(storage, "/images/" + filename);
+    
+    // Define file metadata
+    const metadata = {
+      contentType: req.file!.mimetype
+    };
 
-  // define saving filename on firebase storage
-  const storageRef = ref(storage, "/images/" + filename);
-  //define file detail
+    // Upload to Firebase storage
+    const snapshot = await uploadBytesResumable(storageRef, req.file!.buffer, metadata);
 
-  const metadata = {
-    contentType: req.file!.mimetype
+    // Get download URL
+    const url = await getDownloadURL(snapshot.ref);
+
+    // Insert URL into MySQL database
+    conn.query("INSERT INTO bigbike (bimg) VALUES (?)", [url], (err, result) => {
+      if (err) {
+        console.error("Error inserting data:", err);
+        res.status(500).json({ error: "Error inserting data" });
+      } else {
+        res.status(200).json({ url });
+      }
+    });
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    res.status(500).json({ error: "Error uploading image" });
   }
-
-  //upload to firebase storage
-  const snapshot = await uploadBytesResumable(
-    storageRef,
-    req.file!.buffer,
-    metadata);
-
-  //Return
-  const url = await getDownloadURL(snapshot.ref);
-  res.status(200).json({
-    file: url
-  });
 });
+

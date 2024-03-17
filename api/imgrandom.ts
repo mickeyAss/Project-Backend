@@ -24,7 +24,7 @@ router.post("/vote", (req, res) => {
 });
 
 router.get("/votesome",(req,res)=>{
-    const sql = "SELECT bigbike.*,vote.*, COALESCE(vote.score ,100) AS score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk"; 
+    const sql = "SELECT bigbike.*,vote.*, COALESCE(vote.score ,0) AS score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk"; 
     conn.query(sql,(err,result)=>{
         if(err){
             res.json(err);  
@@ -88,7 +88,28 @@ router.get("/", (req, res) => {
       res.json(result);
     }
   });
-})
+});
+
+router.get("/beforeDay", (req, res) => {
+  const today = new Date();
+  const sql = `
+    SELECT bigbike.*, 
+           SUM(CASE WHEN DATE(vote.date) != CURDATE() THEN COALESCE(vote.score, 0) ELSE 0 END) AS total_score
+    FROM bigbike
+    LEFT JOIN vote ON bigbike.bid = vote.bid_fk
+    GROUP BY bigbike.bid
+    ORDER BY total_score DESC
+    LIMIT 10
+  `;
+  conn.query(sql, (err, result) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      res.status(500).json({ error: "Error fetching data" });
+    } else {
+      res.json(result);
+    }
+  });
+});
 
 //ดึงข้อมูลของแต่ละ bid
 router.get("/getBid/:bid", (req, res) => {
@@ -115,26 +136,6 @@ router.get("/getBid/:bid", (req, res) => {
 });
 
 
-router.get("/beforeDay", (req, res) => {
-  const today = new Date();
-  const sql = `
-    SELECT bigbike.*, 
-           SUM(CASE WHEN DATE(vote.date) != CURDATE() THEN COALESCE(vote.score, 0) ELSE 0 END) AS total_score
-    FROM bigbike
-    LEFT JOIN vote ON bigbike.bid = vote.bid_fk
-    GROUP BY bigbike.bid
-    ORDER BY total_score DESC
-    LIMIT 10
-  `;
-  conn.query(sql, (err, result) => {
-    if (err) {
-      console.error("Error fetching data:", err);
-      res.status(500).json({ error: "Error fetching data" });
-    } else {
-      res.json(result);
-    }
-  });
-});
 
 router.get("/scores-last-7-days/:bid", (req, res) => {
   const bid = req.params.bid;
@@ -145,7 +146,7 @@ router.get("/scores-last-7-days/:bid", (req, res) => {
            DAYOFMONTH(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY)) AS voting_day,
            COALESCE(SUM(score), 0) AS total_score_last_7_days
     FROM (
-      SELECT 0 AS seq UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6
+      SELECT 0 AS seq UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 
     ) AS seq
     LEFT JOIN vote ON DAYOFMONTH(vote.date) = DAYOFMONTH(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY)) AND vote.bid_fk = ?
     GROUP BY bid_fk, DAYOFMONTH(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY))
