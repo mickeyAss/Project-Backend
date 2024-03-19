@@ -24,26 +24,14 @@ router.post("/vote", (req, res) => {
 });
 
 router.get("/votesome",(req,res)=>{
-  const sql = "SELECT bigbike.*,vote.*, COALESCE(vote.score ,0) AS score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk"; 
-  conn.query(sql, (err, result) => {
-    if(err){
-      res.json(err);  
-    } else {
-      // ตรวจสอบว่ามีข้อมูลผู้ชนะและผู้แพ้อยู่ในผลลัพธ์หรือไม่
-      if(result.length >= 2) {
-        const winnerScore = result[0].score; // คะแนนเดิมของผู้ชนะ
-        const loserScore = result[1].score; // คะแนนเดิมของผู้แพ้
-
-        // คำนวณคะแนนใหม่
-        const { winnerNewScore, loserNewScore } = calculateElo(winnerScore, loserScore);
-
-        // ส่งคะแนนใหม่กลับไป
-        res.json({ winnerNewScore, loserNewScore });
-      } else {
-        res.json({ error: "ไม่พบข้อมูลผู้ชนะและผู้แพ้ในผลลัพธ์" });
-      }
-    }
-  });
+    const sql = "SELECT bigbike.*,vote.*, COALESCE(vote.score ,0) AS score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk"; 
+    conn.query(sql,(err,result)=>{
+        if(err){
+            res.json(err);  
+        }else{
+            res.json(result)
+        }
+    })
 });
 
 // POST route เพื่อรับคะแนนรวมและอัปเดตลงในฐานข้อมูล bigbike
@@ -175,8 +163,4 @@ router.get("/scores-last-7-days/:bid", (req, res) => {
   });
 });
 
-
-function calculateElo(winnerScore: any, loserScore: any): { winnerNewScore: any; loserNewScore: any; } {
-  throw new Error("Function not implemented.");
-}
 
