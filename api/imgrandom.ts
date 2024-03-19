@@ -24,71 +24,83 @@ router.post("/vote", (req, res) => {
 });
 
 router.get("/votesome",(req,res)=>{
-    const sql = "SELECT bigbike.*,vote.*, COALESCE(vote.score ,0) AS score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk"; 
-    conn.query(sql,(err,result)=>{
-        if(err){
-            res.json(err);  
-        }else{
-            res.json(result)
-        }
-    })
-});
-
-// POST route เพื่อรับคะแนนรวมและอัปเดตลงในฐานข้อมูล bigbike
-router.put("/updatescore/:bid", (req, res) => {
-  let bid = +req.params.bid;
-  let scsum = req.body.scsum;
-
-  // ตรวจสอบข้อมูลที่ได้รับ
-  console.log("Received data:", bid, scsum);
-
-  // อัปเดตคะแนนรวมลงในฐานข้อมูล bigbike
-  conn.query("UPDATE bigbike SET scsum = ? WHERE bid = ?", [scsum,bid], (err, result) => {
-    if (err) {
-      console.error("Error updating total score:", err);
-      res.status(500).json({ error: "Error updating total score" });
+  const sql = "SELECT bigbike.*,vote.*, COALESCE(vote.score ,0) AS score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk"; 
+  conn.query(sql, (err, result) => {
+    if(err){
+      res.json(err);  
     } else {
-      console.log("Total score updated successfully");
-      res.status(200).json({ message: "Total score updated successfully" });
-    }
-  });
-});
+      // ตรวจสอบว่ามีข้อมูลผู้ชนะและผู้แพ้อยู่ในผลลัพธ์หรือไม่
+      if(result.length >= 2) {
+        const winnerScore = result[0].score; // คะแนนเดิมของผู้ชนะ
+        const loserScore = result[1].score; // คะแนนเดิมของผู้แพ้
 
-//คำนวณคะแนนรวม
-router.get("/calculate-score/:bid", (req, res) => {
-  let bid = req.params.bid;
+        // คำนวณคะแนนใหม่
+        const { winnerNewScore, loserNewScore } = calculateElo(winnerScore, loserScore);
 
-  // คำสั่ง SQL สำหรับคำนวณคะแนนรวมสำหรับแต่ละ bid
-  const sql = "SELECT bid_fk, SUM(score) AS total_score FROM vote WHERE bid_fk = ? GROUP BY bid_fk";
-
-  conn.query(sql, [bid], (err, result) => {
-    if (err) {
-      console.error("Error calculating total score:", err);
-      res.status(500).json({ error: "Error calculating total score" });
-    } else {
-      // ตรวจสอบว่ามีผลลัพธ์หรือไม่
-      if (result.length > 0) {
-        // ส่งข้อมูลคะแนนรวมกลับไป
-        res.status(200).json({ bid: bid, total_score: result[0].total_score });
+        // ส่งคะแนนใหม่กลับไป
+        res.json({ winnerNewScore, loserNewScore });
       } else {
-        // หากไม่มีผลลัพธ์ให้ส่งคะแนนรวมเป็น 0
-        res.status(200).json({ bid: bid, total_score: 0 });
+        res.json({ error: "ไม่พบข้อมูลผู้ชนะและผู้แพ้ในผลลัพธ์" });
       }
     }
   });
 });
 
+// POST route เพื่อรับคะแนนรวมและอัปเดตลงในฐานข้อมูล bigbike
+// router.put("/updatescore/:bid", (req, res) => {
+//   let bid = +req.params.bid;
+//   let scsum = req.body.scsum;
+
+//   // ตรวจสอบข้อมูลที่ได้รับ
+//   console.log("Received data:", bid, scsum);
+
+//   // อัปเดตคะแนนรวมลงในฐานข้อมูล bigbike
+//   conn.query("UPDATE bigbike SET scsum = ? WHERE bid = ?", [scsum,bid], (err, result) => {
+//     if (err) {
+//       console.error("Error updating total score:", err);
+//       res.status(500).json({ error: "Error updating total score" });
+//     } else {
+//       console.log("Total score updated successfully");
+//       res.status(200).json({ message: "Total score updated successfully" });
+//     }
+//   });
+// });
+
+//คำนวณคะแนนรวม
+// router.get("/calculate-score/:bid", (req, res) => {
+//   let bid = req.params.bid;
+
+//   // คำสั่ง SQL สำหรับคำนวณคะแนนรวมสำหรับแต่ละ bid
+//   const sql = "SELECT bid_fk, SUM(score) AS total_score FROM vote WHERE bid_fk = ? GROUP BY bid_fk";
+
+//   conn.query(sql, [bid], (err, result) => {
+//     if (err) {
+//       console.error("Error calculating total score:", err);
+//       res.status(500).json({ error: "Error calculating total score" });
+//     } else {
+//       // ตรวจสอบว่ามีผลลัพธ์หรือไม่
+//       if (result.length > 0) {
+//         // ส่งข้อมูลคะแนนรวมกลับไป
+//         res.status(200).json({ bid: bid, total_score: result[0].total_score });
+//       } else {
+//         // หากไม่มีผลลัพธ์ให้ส่งคะแนนรวมเป็น 0
+//         res.status(200).json({ bid: bid, total_score: 0 });
+//       }
+//     }
+//   });
+// });
+
 //ดึงข้อมูลจากมากไปน้อยแค่10อันดับ
-router.get("/", (req, res) => {
-  conn.query("SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10", (err, result) => {
-    if (err) {
-      console.error("Error fetching data:", err);
-      res.status(500).json({ error: "Error fetching data" });
-    } else {
-      res.json(result);
-    }
-  });
-});
+// router.get("/", (req, res) => {
+//   conn.query("SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10", (err, result) => {
+//     if (err) {
+//       console.error("Error fetching data:", err);
+//       res.status(500).json({ error: "Error fetching data" });
+//     } else {
+//       res.json(result);
+//     }
+//   });
+// });
 
 router.get("/beforeDay", (req, res) => {
   const today = new Date();
@@ -163,4 +175,8 @@ router.get("/scores-last-7-days/:bid", (req, res) => {
   });
 });
 
+
+function calculateElo(winnerScore: any, loserScore: any): { winnerNewScore: any; loserNewScore: any; } {
+  throw new Error("Function not implemented.");
+}
 
