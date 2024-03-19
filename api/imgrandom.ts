@@ -34,6 +34,35 @@ router.get("/votesome",(req,res)=>{
     })
 });
 
+router.get("/votesome/:bid", (req, res) => {
+  const { bid } = req.params;
+  const sql = `
+      SELECT bigbike.*, vote.*, COALESCE(vote.score, 0) AS current_score 
+      FROM bigbike 
+      LEFT JOIN vote ON bigbike.bid = vote.bid_fk 
+      WHERE vote.bid_fk = ? AND vote.score != 0
+      ORDER BY vote.date DESC
+      LIMIT 1`;
+  conn.query(sql, [bid], (err, result) => {
+      if (err) {
+          res.json(err);
+      } else {
+          res.json(result);
+      }
+  });
+});
+
+router.get("/topten", (req, res) => {
+  const sql = "SELECT bigbike.*, COALESCE(vote.score, 0) AS score FROM bigbike LEFT JOIN (SELECT bid_fk, MAX(score) AS score FROM vote GROUP BY bid_fk) AS vote ON bigbike.bid = vote.bid_fk ORDER BY score DESC LIMIT 10"; 
+  conn.query(sql, (err, result) => {
+      if(err) {
+          res.json(err);  
+      } else {
+          res.json(result);
+      }
+  });
+});
+
 // POST route เพื่อรับคะแนนรวมและอัปเดตลงในฐานข้อมูล bigbike
 // router.put("/updatescore/:bid", (req, res) => {
 //   let bid = +req.params.bid;
