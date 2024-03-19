@@ -128,16 +128,16 @@ router.put("/updatescore/:bid", (req, res) => {
 // });
 
 //ดึงข้อมูลจากมากไปน้อยแค่10อันดับ
-// router.get("/", (req, res) => {
-//   conn.query("SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10", (err, result) => {
-//     if (err) {
-//       console.error("Error fetching data:", err);
-//       res.status(500).json({ error: "Error fetching data" });
-//     } else {
-//       res.json(result);
-//     }
-//   });
-// });
+router.get("/", (req, res) => {
+  conn.query("SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10", (err, result) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      res.status(500).json({ error: "Error fetching data" });
+    } else {
+      res.json(result);
+    }
+  });
+});
 
 router.get("/beforeDay", (req, res) => {
   const today = new Date();
