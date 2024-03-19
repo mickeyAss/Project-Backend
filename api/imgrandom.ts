@@ -5,14 +5,14 @@ export const router = express.Router();
   
 // POST route เพื่อรับคะแนนที่โหวตและเพิ่มข้อมูลลงในฐานข้อมูล
 router.post("/vote", (req, res) => {
-  const {uid_fk, bid_fk, score , date ,	your_datetime_column} = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
+  const {uid_fk, bid_fk, score , date } = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
 
   // ตรวจสอบข้อมูลที่ได้รับ
-  console.log("Received data:",uid_fk, bid_fk, score, date,	your_datetime_column);
+  console.log("Received data:",uid_fk, bid_fk, score, date);
   
 
   // เพิ่มข้อมูล vote ลงในฐานข้อมูลพร้อมเวลาและวันที่
-  conn.query("INSERT INTO vote (uid_fk ,bid_fk, score, date,	your_datetime_column) VALUES (?, ?, ?, ?,?)", [uid_fk, bid_fk, score, date,	your_datetime_column], (err, result) => {
+  conn.query("INSERT INTO vote (uid_fk ,bid_fk, score, date) VALUES (?, ?, ?, ?)", [uid_fk, bid_fk, score, date], (err, result) => {
     if (err) {
       console.error("Error inserting vote:", err);
       res.status(500).json({ error: "Error inserting vote" });
@@ -54,13 +54,26 @@ router.get("/votesome/:bid", (req, res) => {
 });
 
 router.get("/topten", (req, res) => {
-  const sql = "SELECT bigbike.*, COALESCE(vote.score, 0) AS score FROM bigbike LEFT JOIN (SELECT bid_fk, MAX(score) AS score FROM vote WHERE score IS NOT NULL GROUP BY bid_fk) AS vote ON bigbike.bid = vote.bid_fk WHERE score IS NOT NULL ORDER BY score DESC LIMIT 10"; 
+  const sql = `
+    SELECT bigbike.*, COALESCE(vote.score, 0) AS score 
+    FROM bigbike 
+    LEFT JOIN (
+      SELECT bid_fk, MAX(score) AS score
+      FROM vote 
+      WHERE score IS NOT NULL 
+      GROUP BY bid_fk
+    ) AS vote ON bigbike.bid = vote.bid_fk 
+    WHERE vote.score IS NOT NULL 
+    ORDER BY vote.score DESC 
+    LIMIT 10
+  `;
+
   conn.query(sql, (err, result) => {
-      if(err) {
-          res.json(err);  
-      } else {
-          res.json(result);
-      }
+    if(err) {
+      res.json(err);  
+    } else {
+      res.json(result);
+    }
   });
 });
 
