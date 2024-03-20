@@ -25,6 +25,7 @@ router.post("/vote", (req, res) => {
   );
 });
 
+
 router.get("/votesome", (req, res) => {
   const sql =
     "SELECT bigbike.*, SUM(COALESCE(vote.score, 0)) AS total_score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk GROUP BY bigbike.bid";
