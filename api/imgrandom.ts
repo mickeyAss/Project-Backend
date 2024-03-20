@@ -27,7 +27,7 @@ router.post("/vote", (req, res) => {
 
 router.get("/votesome", (req, res) => {
   const sql =
-    "SELECT bigbike.*,vote.*, COALESCE(vote.score ,0) AS score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk";
+    "SELECT bigbike.*, SUM(COALESCE(vote.score, 0)) AS total_score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk GROUP BY bigbike.bid";
   conn.query(sql, (err, result) => {
     if (err) {
       res.json(err);
@@ -82,6 +82,7 @@ router.get("/topten", (req, res) => {
   });
 });
 
+
 // POST route เพื่อรับคะแนนรวมและอัปเดตลงในฐานข้อมูล bigbike
 router.put("/updatescore/:bid", (req, res) => {
   let bid = +req.params.bid;
@@ -91,19 +92,15 @@ router.put("/updatescore/:bid", (req, res) => {
   console.log("Received data:", bid, scsum);
 
   // อัปเดตคะแนนรวมลงในฐานข้อมูล bigbike
-  conn.query(
-    "UPDATE bigbike SET scsum = ? WHERE bid = ?",
-    [scsum, bid],
-    (err, result) => {
-      if (err) {
-        console.error("Error updating total score:", err);
-        res.status(500).json({ error: "Error updating total score" });
-      } else {
-        console.log("Total score updated successfully");
-        res.status(200).json({ message: "Total score updated successfully" });
-      }
+  conn.query("UPDATE bigbike SET scsum = ? WHERE bid = ?", [scsum,bid], (err, result) => {
+    if (err) {
+      console.error("Error updating total score:", err);
+      res.status(500).json({ error: "Error updating total score" });
+    } else {
+      console.log("Total score updated successfully");
+      res.status(200).json({ message: "Total score updated successfully" });
     }
-  );
+  });
 });
 
 //คำนวณคะแนนรวม
@@ -132,23 +129,20 @@ router.put("/updatescore/:bid", (req, res) => {
 
 //ดึงข้อมูลจากมากไปน้อยแค่10อันดับ
 router.get("/", (req, res) => {
-  conn.query(
-    "SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10",
-    (err, result) => {
-      if (err) {
-        console.error("Error fetching data:", err);
-        res.status(500).json({ error: "Error fetching data" });
-      } else {
-        res.json(result);
-      }
+  conn.query("SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10", (err, result) => {
+    if (err) {
+      console.error("Error fetching data:", err);
+      res.status(500).json({ error: "Error fetching data" });
+    } else {
+      res.json(result);
     }
-  );
+  });
 });
 
 // router.get("/beforeDay", (req, res) => {
 //   const today = new Date();
 //   const sql = `
-//     SELECT bigbike.*,
+//     SELECT bigbike.*, 
 //            SUM(CASE WHEN DATE(vote.date) != CURDATE() THEN COALESCE(vote.score, 0) ELSE 0 END) AS total_score
 //     FROM bigbike
 //     LEFT JOIN vote ON bigbike.bid = vote.bid_fk
@@ -195,13 +189,16 @@ router.get("/scores-last-7-days/:bid", (req, res) => {
 
   // คำสั่ง SQL สำหรับค้นหาคะแนนล่าสุดของแต่ละวันสำหรับแต่ละ bid ในช่วง 7 วันย้อนหลัง
   const sql = `
-    SELECT vote.bid_fk,
-           DATE(vote.date) AS voting_day,
-           COALESCE(score, 0) AS latest_score
-    FROM vote
-    WHERE vote.bid_fk = ?
-      AND DATE(vote.date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE()
-    ORDER BY DATE(vote.date) ASC
+    SELECT DATE(latest_scores.max_date) AS voting_day,
+           COALESCE(latest_scores.score, 0) AS latest_score
+    FROM (
+      SELECT MAX(date) AS max_date, score
+      FROM vote
+      WHERE bid_fk = ?
+        AND DATE(vote.date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE()
+      GROUP BY DATE(vote.date)
+    ) AS latest_scores
+    ORDER BY DATE(latest_scores.max_date) ASC
   `;
 
   conn.query(sql, [bid], (err, result) => {
@@ -213,3 +210,4 @@ router.get("/scores-last-7-days/:bid", (req, res) => {
     }
   });
 });
+
