@@ -183,3 +183,20 @@ router.get("/getBid/:bid", (req, res) => {
   });
 });
 
+router.post("/insert", (req, res) => {
+  const { bname, bimg, uid_fk } = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
+
+  conn.query(
+    "INSERT INTO bigbike (bname,bimg,uid_fk) VALUES (?, ?, ?)",
+    [bname,bimg,uid_fk],
+    (err, result) => {
+      if (err) {
+        console.error("Error inserting vote:", err);
+        res.status(500).json({ error: "Error inserting" });
+      } else {
+        console.log("Vote added successfully");
+        res.status(200).json({ message: "Insert added successfully" });
+      }
+    }
+  );
+});
