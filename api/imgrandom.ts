@@ -82,7 +82,6 @@ router.get("/topten", (req, res) => {
   });
 });
 
-
 // POST route เพื่อรับคะแนนรวมและอัปเดตลงในฐานข้อมูล bigbike
 router.put("/updatescore/:bid", (req, res) => {
   let bid = +req.params.bid;
@@ -92,15 +91,19 @@ router.put("/updatescore/:bid", (req, res) => {
   console.log("Received data:", bid, scsum);
 
   // อัปเดตคะแนนรวมลงในฐานข้อมูล bigbike
-  conn.query("UPDATE bigbike SET scsum = ? WHERE bid = ?", [scsum,bid], (err, result) => {
-    if (err) {
-      console.error("Error updating total score:", err);
-      res.status(500).json({ error: "Error updating total score" });
-    } else {
-      console.log("Total score updated successfully");
-      res.status(200).json({ message: "Total score updated successfully" });
+  conn.query(
+    "UPDATE bigbike SET scsum = ? WHERE bid = ?",
+    [scsum, bid],
+    (err, result) => {
+      if (err) {
+        console.error("Error updating total score:", err);
+        res.status(500).json({ error: "Error updating total score" });
+      } else {
+        console.log("Total score updated successfully");
+        res.status(200).json({ message: "Total score updated successfully" });
+      }
     }
-  });
+  );
 });
 
 //คำนวณคะแนนรวม
@@ -129,36 +132,39 @@ router.put("/updatescore/:bid", (req, res) => {
 
 //ดึงข้อมูลจากมากไปน้อยแค่10อันดับ
 router.get("/", (req, res) => {
-  conn.query("SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10", (err, result) => {
-    if (err) {
-      console.error("Error fetching data:", err);
-      res.status(500).json({ error: "Error fetching data" });
-    } else {
-      res.json(result);
+  conn.query(
+    "SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10",
+    (err, result) => {
+      if (err) {
+        console.error("Error fetching data:", err);
+        res.status(500).json({ error: "Error fetching data" });
+      } else {
+        res.json(result);
+      }
     }
-  });
+  );
 });
 
-router.get("/beforeDay", (req, res) => {
-  const today = new Date();
-  const sql = `
-    SELECT bigbike.*, 
-           SUM(CASE WHEN DATE(vote.date) != CURDATE() THEN COALESCE(vote.score, 0) ELSE 0 END) AS total_score
-    FROM bigbike
-    LEFT JOIN vote ON bigbike.bid = vote.bid_fk
-    GROUP BY bigbike.bid
-    ORDER BY total_score DESC
-    LIMIT 10
-  `;
-  conn.query(sql, (err, result) => {
-    if (err) {
-      console.error("Error fetching data:", err);
-      res.status(500).json({ error: "Error fetching data" });
-    } else {
-      res.json(result);
-    }
-  });
-});
+// router.get("/beforeDay", (req, res) => {
+//   const today = new Date();
+//   const sql = `
+//     SELECT bigbike.*,
+//            SUM(CASE WHEN DATE(vote.date) != CURDATE() THEN COALESCE(vote.score, 0) ELSE 0 END) AS total_score
+//     FROM bigbike
+//     LEFT JOIN vote ON bigbike.bid = vote.bid_fk
+//     GROUP BY bigbike.bid
+//     ORDER BY total_score DESC
+//     LIMIT 10
+//   `;
+//   conn.query(sql, (err, result) => {
+//     if (err) {
+//       console.error("Error fetching data:", err);
+//       res.status(500).json({ error: "Error fetching data" });
+//     } else {
+//       res.json(result);
+//     }
+//   });
+// });
 
 //ดึงข้อมูลของแต่ละ bid
 router.get("/getBid/:bid", (req, res) => {
@@ -187,17 +193,15 @@ router.get("/getBid/:bid", (req, res) => {
 router.get("/scores-last-7-days/:bid", (req, res) => {
   const bid = req.params.bid;
 
-  // คำสั่ง SQL สำหรับค้นหาคะแนนรวมของแต่ละ bid ในช่วง 7 วันย้อนหลัง
+  // คำสั่ง SQL สำหรับค้นหาคะแนนล่าสุดของแต่ละวันสำหรับแต่ละ bid ในช่วง 7 วันย้อนหลัง
   const sql = `
-    SELECT bid_fk,
-           DAYOFMONTH(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY)) AS voting_day,
-           COALESCE(SUM(score), 0) AS total_score_last_7_days
-    FROM (
-      SELECT 0 AS seq UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6 
-    ) AS seq
-    LEFT JOIN vote ON DAYOFMONTH(vote.date) = DAYOFMONTH(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY)) AND vote.bid_fk = ?
-    GROUP BY bid_fk, DAYOFMONTH(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY))
-    ORDER BY DAYOFMONTH(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY)) ASC
+    SELECT vote.bid_fk,
+           DATE(vote.date) AS voting_day,
+           COALESCE(score, 0) AS latest_score
+    FROM vote
+    WHERE vote.bid_fk = ?
+      AND DATE(vote.date) BETWEEN DATE_SUB(CURDATE(), INTERVAL 6 DAY) AND CURDATE()
+    ORDER BY DATE(vote.date) ASC
   `;
 
   conn.query(sql, [bid], (err, result) => {
