@@ -126,6 +126,26 @@ router.get("/totalScore/:bid", (req, res) => {
   });
 });
 
+// POST route เพื่อรับคะแนนรวมและอัปเดตลงในฐานข้อมูล bigbike
+router.put("/updatescore/:bid", (req, res) => {
+  let bid = +req.params.bid;
+  let scsum = req.body.scsum;
+
+  // ตรวจสอบข้อมูลที่ได้รับ
+  console.log("Received data:", bid, scsum);
+
+  // อัปเดตคะแนนรวมลงในฐานข้อมูล bigbike
+  conn.query("UPDATE bigbike SET scsum = ? WHERE bid = ?", [scsum,bid], (err, result) => {
+    if (err) {
+      console.error("Error updating total score:", err);
+      res.status(500).json({ error: "Error updating total score" });
+    } else {
+      console.log("Total score updated successfully");
+      res.status(200).json({ message: "Total score updated successfully" });
+    }
+  });
+});
+
 //ดึงข้อมูลจากมากไปน้อยแค่10อันดับ
 router.get("/", (req, res) => {
   conn.query("SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10", (err, result) => {
