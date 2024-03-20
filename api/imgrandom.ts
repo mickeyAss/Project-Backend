@@ -86,27 +86,30 @@ router.get("/topten", (req, res) => {
 });
 
 
-/// GET route เพื่อรับคะแนนรวมของบิดและแสดงคะแนนรวมของ 7 วันย้อนหลัง
 router.get("/totalScore/:bid", (req, res) => {
   const { bid } = req.params;
   // คำสั่ง SQL เพื่อหาคะแนนรวมของบิดและคะแนนรวมของ 7 วันย้อนหลัง
   const sql = `
     SELECT 
-      bid_fk,
-      SUM(score) AS total_score,
-      DATE(date) AS vote_date
+      bigbike.bid AS bid_fk,
+      DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY), '%d') AS vote_date,
+      COALESCE(SUM(vote.score), 0) AS total_score
     FROM 
-      vote
+      (SELECT 0 AS seq
+      UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3
+      UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6) AS seq
+    LEFT JOIN 
+      bigbike ON bigbike.bid = ?
+    LEFT JOIN 
+      vote ON bigbike.bid = vote.bid_fk AND DATE(vote.date) = DATE_SUB(CURDATE(), INTERVAL seq.seq DAY)
     WHERE 
-      bid_fk = ? AND
-      DATE(date) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND
-      DATE(date) <= CURDATE()
+      bigbike.bid = ?
     GROUP BY 
-      bid_fk, DATE(date)
+      bigbike.bid, DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY), '%d'), seq.seq
     ORDER BY 
-      vote_date DESC`;
+      DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY), '%d') DESC`;
 
-  conn.query(sql, [bid], (err, result) => {
+  conn.query(sql, [bid, bid], (err, result) => {
     if (err) {
       console.error("Error fetching total score for bid:", bid, err);
       res.status(500).json({ error: "Error fetching total score" });
@@ -122,7 +125,6 @@ router.get("/totalScore/:bid", (req, res) => {
     }
   });
 });
-
 
 //ดึงข้อมูลจากมากไปน้อยแค่10อันดับ
 router.get("/", (req, res) => {
