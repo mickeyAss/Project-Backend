@@ -107,7 +107,7 @@ router.get("/totalScore/:bid", (req, res) => {
     GROUP BY 
       bigbike.bid, DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY), '%d'), seq.seq
     ORDER BY 
-      DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY), '%d') DESC`;
+      DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY), '%d') ASC`;
 
   conn.query(sql, [bid, bid], (err, result) => {
     if (err) {
