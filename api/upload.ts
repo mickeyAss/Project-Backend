@@ -121,3 +121,31 @@ router.get("/image-count/:uid", (req, res) => {
   });
 });
 
+router.delete("/deleteimg/:bid", (req, res) => {
+  const bid = +req.params.bid;
+
+  // ลบข้อมูลในตาราง vote ที่มี bid_fk เท่ากับ bid ที่ระบุ
+  conn.query("DELETE FROM vote WHERE bid_fk = ?", [bid], (err, voteResult) => {
+    if (err) {
+      console.error("Error deleting from vote table:", err);
+      res.status(500).json({ error: "Error deleting from vote table" });
+      return;
+    }
+
+    // ลบข้อมูลในตาราง bigbike ที่มี bid ที่ระบุ
+    conn.query("DELETE FROM bigbike WHERE bid = ?", [bid], (err, bigbikeResult) => {
+      if (err) {
+        console.error("Error deleting from bigbike table:", err);
+        res.status(500).json({ error: "Error deleting from bigbike table" });
+        return;
+      }
+
+      res.status(200).json({
+        message: "Successfully deleted from bigbike and vote tables",
+        bigbike_affected_rows: bigbikeResult.affectedRows,
+        vote_affected_rows: voteResult.affectedRows
+      });
+    });
+  });
+});
+
