@@ -105,4 +105,19 @@ router.post("/insert", (req, res) => {
   });
 });
 
+router.get("/image-count/:uid", (req, res) => {
+  const uid = req.params.uid;
+
+  // ตรวจสอบจำนวนรูปภาพของ UID นี้
+  conn.query("SELECT COUNT(*) AS image_count FROM bigbike WHERE uid_fk = ?", [uid], (err, result) => {
+    if (err) {
+      console.error("Error checking image count:", err);
+      res.status(500).json({ error: "Error checking image count" });
+    } else {
+      const imageCount = result[0].image_count;
+      console.log('Image count:', imageCount);
+      res.status(200).json({ image_count: imageCount });
+    }
+  });
+});
 
