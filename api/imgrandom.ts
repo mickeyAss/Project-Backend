@@ -2,7 +2,6 @@ import express from "express";
 import { conn } from "../dbconnect";
 export const router = express.Router();
 
-
 // insert คะแนนที่เพิ่ม-ลดของแต่ละ bid ลง table vote
 router.post("/vote", (req, res) => {
   const { uid_fk, bid_fk, score, date } = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
@@ -62,25 +61,19 @@ router.get("/votesome/:bid", (req, res) => {
 router.get("/totalScore/:bid", (req, res) => {
   const { bid } = req.params;
   // คำสั่ง SQL เพื่อหาคะแนนรวมของบิดและคะแนนรวมของ 7 วันย้อนหลัง
-  const sql = `
-    SELECT 
-      bigbike.bid AS bid_fk,
-      DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY), '%d') AS vote_date,
-      COALESCE(SUM(vote.score), 0) AS total_score
-    FROM 
-      (SELECT 0 AS seq
-      UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3
-      UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6) AS seq
-    LEFT JOIN 
-      bigbike ON bigbike.bid = ?
-    LEFT JOIN 
-      vote ON bigbike.bid = vote.bid_fk AND DATE(vote.date) = DATE_SUB(CURDATE(), INTERVAL seq.seq DAY)
-    WHERE 
-      bigbike.bid = ?
-    GROUP BY 
-      bigbike.bid, DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY), '%d'), seq.seq
-    ORDER BY 
-      DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL seq.seq DAY), '%d') ASC`;
+  const sql = ` SELECT bigbike.bid, DATE(vote.date) AS vote_date, 
+  CASE
+      WHEN DATE(vote.date) = (SELECT MIN(DATE(v2.date)) FROM vote v2 WHERE v2.bid_fk = bigbike.bid) THEN SUM(COALESCE(vote.score, 0))
+      ELSE SUM(COALESCE(vote.score, 0)) + 
+           (SELECT SUM(COALESCE(v2.score, 0)) 
+            FROM vote v2 
+            WHERE bigbike.bid = v2.bid_fk AND DATE(v2.date) < DATE(vote.date))
+  END AS total_score
+  FROM bigbike 
+  LEFT JOIN vote ON bigbike.bid = vote.bid_fk
+  WHERE bigbike.bid = ?
+  GROUP BY bigbike.bid, DATE(vote.date), vote.date
+  ORDER BY DATE(vote.date) ASC`
 
   conn.query(sql, [bid, bid], (err, result) => {
     if (err) {
@@ -93,7 +86,9 @@ router.get("/totalScore/:bid", (req, res) => {
         res.status(200).json(result);
       } else {
         // หากไม่พบข้อมูลของ bid ที่ระบุ
-        res.status(404).json({ error: "Bid not found or no votes within the last 7 days" });
+        res
+          .status(404)
+          .json({ error: "Bid not found or no votes within the last 7 days" });
       }
     }
   });
@@ -108,29 +103,35 @@ router.put("/updatescore/:bid", (req, res) => {
   console.log("Received data:", bid, scsum);
 
   // อัปเดตคะแนนรวมลงในฐานข้อมูล bigbike
-  conn.query("UPDATE bigbike SET scsum = ? WHERE bid = ?", [scsum,bid], (err, result) => {
-    if (err) {
-      console.error("Error updating total score:", err);
-      res.status(500).json({ error: "Error updating total score" });
-    } else {
-      console.log("Total score updated successfully");
-      res.status(200).json({ message: "Total score updated successfully" });
+  conn.query(
+    "UPDATE bigbike SET scsum = ? WHERE bid = ?",
+    [scsum, bid],
+    (err, result) => {
+      if (err) {
+        console.error("Error updating total score:", err);
+        res.status(500).json({ error: "Error updating total score" });
+      } else {
+        console.log("Total score updated successfully");
+        res.status(200).json({ message: "Total score updated successfully" });
+      }
     }
-  });
+  );
 });
 
 //ดึงข้อมูลจากมากไปน้อยแค่10อันดับ
 router.get("/", (req, res) => {
-  conn.query("SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10", (err, result) => {
-    if (err) {
-      console.error("Error fetching data:", err);
-      res.status(500).json({ error: "Error fetching data" });
-    } else {
-      res.json(result);
+  conn.query(
+    "SELECT * FROM `bigbike` ORDER BY scsum DESC LIMIT 10",
+    (err, result) => {
+      if (err) {
+        console.error("Error fetching data:", err);
+        res.status(500).json({ error: "Error fetching data" });
+      } else {
+        res.json(result);
+      }
     }
-  });
+  );
 });
-
 
 //ดึงข้อมูลของแต่ละ bid
 router.get("/getBid/:bid", (req, res) => {
@@ -155,4 +156,3 @@ router.get("/getBid/:bid", (req, res) => {
     }
   });
 });
-
