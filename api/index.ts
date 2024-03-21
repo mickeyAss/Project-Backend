@@ -4,6 +4,9 @@ export const router = express.Router();
 var jwt = require('jsonwebtoken');
 const secret = 'Fullstack-Login-2021'
 
+
+
+
 router.get("/", (req, res) => {
   conn.query("SELECT * FROM `users`", (err, result) => {
     res.json(result);
@@ -83,6 +86,27 @@ router.get("/:token", (req, res) => {
   }
 });
 
+router.get("/bigbike/:uid_fk", (req, res) => {
+  const uid_fk = req.params.uid_fk;
+  try {
+    const sql = 'SELECT * FROM bigbike WHERE uid_fk = ?';
+    conn.query(sql, [uid_fk], (err, result) => {
+      if (err) {
+        console.error('Error:', err);
+        res.status(500).json({ status: "error", message: "Internal Server Error" });
+        return;
+      }
+      if (result.length === 0) {
+        res.status(404).json({ status: "error", message: "User not found" });
+        return;
+      }
+      res.json(result); // ส่งข้อมูล bigbike ทั้งหมดที่ตรงเงื่อนไขกลับไปยัง client
+    });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(401).json({ status: "error", message: "Unauthorized" }); // ส่งข้อความ Unauthorized หาก token ไม่ถูกต้อง
+  }
+});
 
 
 
