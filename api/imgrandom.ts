@@ -61,7 +61,7 @@ router.get("/votesome/:bid", (req, res) => {
 router.get("/totalScore/:bid", (req, res) => {
   const { bid } = req.params;
   // คำสั่ง SQL เพื่อหาคะแนนรวมของบิดและคะแนนรวมของ 7 วันย้อนหลัง
-  const sql = ` SELECT bigbike.bid, DATE(vote.date) AS vote_date, 
+  const sql = ` SELECT bigbike.bid, DATE_FORMAT(vote.date, '%d') AS vote_date, 
   CASE
       WHEN DATE(vote.date) = (SELECT MIN(DATE(v2.date)) FROM vote v2 WHERE v2.bid_fk = bigbike.bid) THEN SUM(COALESCE(vote.score, 0))
       ELSE SUM(COALESCE(vote.score, 0)) + 
