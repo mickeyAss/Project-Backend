@@ -2,7 +2,8 @@ import express from "express";
 import { conn } from "../dbconnect";
 export const router = express.Router();
 
-// POST route เพื่อรับคะแนนที่โหวตและเพิ่มข้อมูลลงในฐานข้อมูล
+
+// insert คะแนนที่เพิ่ม-ลดของแต่ละ bid ลง table vote
 router.post("/vote", (req, res) => {
   const { uid_fk, bid_fk, score, date } = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
 
@@ -25,7 +26,7 @@ router.post("/vote", (req, res) => {
   );
 });
 
-
+// แสดงข้อมูลรถใน table bigbike และคะแนนในtable vote
 router.get("/votesome", (req, res) => {
   const sql =
     "SELECT bigbike.*, SUM(COALESCE(vote.score, 0)) AS total_score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk GROUP BY bigbike.bid";
@@ -38,8 +39,7 @@ router.get("/votesome", (req, res) => {
   });
 });
 
-
-
+//แสดงข้อมูลรถใน table bigbike และคะแนนในtable vote ของแต่ละ bid
 router.get("/votesome/:bid", (req, res) => {
   const { bid } = req.params;
   const sql = `
@@ -58,34 +58,7 @@ router.get("/votesome/:bid", (req, res) => {
   });
 });
 
-router.get("/topten", (req, res) => {
-  const sql = `
-    SELECT bigbike.*, 
-           vote.uid_fk, 
-           vote.score, 
-           vote.date,
-           COALESCE(vote.score, 0) AS current_score 
-    FROM bigbike 
-    LEFT JOIN (
-      SELECT vote.*
-      FROM vote
-      JOIN (
-         SELECT bid_fk, MAX(date) AS max_date
-         FROM vote
-         WHERE score != 0
-         GROUP BY bid_fk
-      ) AS latest_votes ON vote.bid_fk = latest_votes.bid_fk AND vote.date = latest_votes.max_date
-    ) AS vote ON bigbike.bid = vote.bid_fk`;
-  conn.query(sql, (err, result) => {
-    if (err) {
-      res.json(err);
-    } else {
-      res.json(result);
-    }
-  });
-});
-
-
+//แสดงคะแนนรวม 7 วันย้อนหลัง
 router.get("/totalScore/:bid", (req, res) => {
   const { bid } = req.params;
   // คำสั่ง SQL เพื่อหาคะแนนรวมของบิดและคะแนนรวมของ 7 วันย้อนหลัง
@@ -183,20 +156,3 @@ router.get("/getBid/:bid", (req, res) => {
   });
 });
 
-router.post("/insert", (req, res) => {
-  const { bname, bimg, uid_fk } = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
-
-  conn.query(
-    "INSERT INTO bigbike (bname,bimg,uid_fk) VALUES (?, ?, ?)",
-    [bname,bimg,uid_fk],
-    (err, result) => {
-      if (err) {
-        console.error("Error inserting vote:", err);
-        res.status(500).json({ error: "Error inserting" });
-      } else {
-        console.log("Vote added successfully");
-        res.status(200).json({ message: "Insert added successfully" });
-      }
-    }
-  );
-});
