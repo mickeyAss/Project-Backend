@@ -71,23 +71,38 @@ router.post("/", fileUpload.diskLoader.single("file"), async (req, res) => {
   });
 });
 
-//อัพโหลดรูปลง database
 router.post("/insert", (req, res) => {
-  const { bname, bimg, uid_fk } = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
+  const { bname, bimg, uid_fk } = req.body; // รับชื่อรูป, ลิงก์รูป, และ uid จากข้อมูลที่ส่งมา
 
-  conn.query(
-    "INSERT INTO bigbike (bname,bimg,uid_fk) VALUES (?, ?, ?)",
-    [bname,bimg,uid_fk],
-    (err, result) => {
-      if (err) {
-        console.error("Error inserting vote:", err);
-        res.status(500).json({ error: "Error inserting" });
-      } else {
-        console.log("Vote added successfully");
-        res.status(200).json({ message: "Insert added successfully" });
-      }
+  // ตรวจสอบว่ามีรูปภาพของ UID นี้อยู่เกิน 5 รูปหรือไม่
+  conn.query("SELECT COUNT(*) AS image_count FROM bigbike WHERE uid_fk = ?", [uid_fk], (err, result) => {
+    if (err) {
+      console.error("Error checking image count:", err);
+      res.status(500).json({ error: "Error checking image count" });
+      return;
     }
-  );
+
+    const imageCount = result[0].image_count;
+    if (imageCount >= 5) {
+      // ถ้ามีรูปภาพเต็ม 5 รูปแล้ว ส่งข้อความแจ้งเตือนกลับไปยังผู้ใช้
+      res.status(400).json({ error: "Maximum image count reached for this user" });
+    } else {
+      // ถ้ายังไม่เต็ม 5 รูป ดำเนินการเพิ่มรูปภาพเข้าสู่ฐานข้อมูล
+      conn.query(
+        "INSERT INTO bigbike (bname, bimg, uid_fk) VALUES (?, ?, ?)",
+        [bname, bimg, uid_fk],
+        (err, result) => {
+          if (err) {
+            console.error("Error inserting image:", err);
+            res.status(500).json({ error: "Error inserting image" });
+          } else {
+            console.log("Image added successfully");
+            res.status(200).json({ message: "Image added successfully" });
+          }
+        }
+      );
+    }
+  });
 });
 
 
