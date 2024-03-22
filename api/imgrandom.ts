@@ -28,7 +28,7 @@ router.post("/vote", (req, res) => {
 // แสดงข้อมูลรถใน table bigbike และคะแนนในtable vote
 router.get("/votesome", (req, res) => {
   const sql =
-    "SELECT bigbike.*, SUM(COALESCE(vote.score, 0)) AS total_score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk GROUP BY bigbike.bid";
+    "SELECT bigbike.*, SUM(COALESCE(vote.score, 100)) AS total_score FROM bigbike LEFT JOIN vote ON bigbike.bid = vote.bid_fk GROUP BY bigbike.bid";
   conn.query(sql, (err, result) => {
     if (err) {
       res.json(err);
@@ -42,7 +42,7 @@ router.get("/votesome", (req, res) => {
 router.get("/votesome/:bid", (req, res) => {
   const { bid } = req.params;
   const sql = `
-      SELECT bigbike.*, vote.*, COALESCE(vote.score, 0) AS current_score 
+      SELECT bigbike.*, vote.*, COALESCE(vote.score, 100) AS current_score 
       FROM bigbike 
       LEFT JOIN vote ON bigbike.bid = vote.bid_fk 
       WHERE vote.bid_fk = ? AND vote.score != 0
@@ -63,7 +63,7 @@ router.get("/totalScore/:bid", (req, res) => {
   // คำสั่ง SQL เพื่อหาคะแนนรวมของบิดและคะแนนรวมของ 7 วันย้อนหลัง
   const sql = ` SELECT bigbike.bid, DATE_FORMAT(vote.date, '%d') AS vote_date, 
   CASE
-      WHEN DATE(vote.date) = (SELECT MIN(DATE(v2.date)) FROM vote v2 WHERE v2.bid_fk = bigbike.bid) THEN SUM(COALESCE(vote.score, 0))
+      WHEN DATE(vote.date) = (SELECT MIN(DATE(v2.date)) FROM vote v2 WHERE v2.bid_fk = bigbike.bid) THEN SUM(COALESCE(vote.score, 100))
       ELSE SUM(COALESCE(vote.score, 0)) + 
            (SELECT SUM(COALESCE(v2.score, 0)) 
             FROM vote v2 
