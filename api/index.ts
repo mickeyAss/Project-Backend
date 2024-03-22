@@ -13,6 +13,12 @@ router.get("/", (req, res) => {
   });
 });
 
+router.get("/avatar", (req, res) => {
+  conn.query("SELECT * FROM `avater`", (err, result) => {
+    res.json(result);
+  });
+});
+
 
 router.post("/register", (req, res) => {
   conn.query(
@@ -248,7 +254,7 @@ class FileMiddleware {
 
 // POST /upload
 const fileUpload = new FileMiddleware();
-router.post("/upuser", fileUpload.diskLoader.single("file"), async (req, res) => {
+router.post("/upuser", fileUpload.diskLoader.single("fileuser"), async (req, res) => {
 
   const filename = Date.now() + "-" + Math.round(Math.random() * 10000) + ".png";
 
