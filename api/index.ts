@@ -3,7 +3,7 @@ import { conn } from "../dbconnect";
 export const router = express.Router();
 var jwt = require('jsonwebtoken');
 const secret = 'Fullstack-Login-2021'
-
+import multer from "multer";
 
 
 
@@ -109,4 +109,101 @@ router.get("/bigbike/:uid_fk", (req, res) => {
 });
 
 
+router.put("/update/:uid", (req, res) => {
+  const uid = +req.params.uid; // รับค่า uid จากพารามิเตอร์ URL
+  const { username, email, password, img, accountname } = req.body; // รับข้อมูลที่ต้องการอัพเดทจาก req.body
 
+  // สร้างคำสั่ง SQL สำหรับการอัพเดทข้อมูล
+  const sql = `
+    UPDATE users 
+    SET username = ?, email = ?, password = ?, img = ?, accountname = ? 
+    WHERE uid = ?
+  `;
+  const values = [username, email, password, img, accountname, uid]; // กำหนดค่าที่จะใส่ลงไปในคำสั่ง SQL
+
+  conn.query(sql, values, (err, result) => {
+    if (err) {
+      console.error("Error updating user data:", err);
+      res.status(500).json({ error: "Error updating user data" });
+      return;
+    }
+
+    // ตรวจสอบว่ามีข้อมูลที่ถูกอัพเดทหรือไม่
+    if (result.affectedRows === 0) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Successfully updated user data",
+      updated_user_id: uid
+    });
+  });
+});
+
+
+//อัพโหลดรูปลง firebase
+//1.connect firebase
+import { initializeApp } from "firebase/app";
+import {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} from "firebase/storage";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyCq4wYB-AMtsn9HlrwPinI-1V8jLR9PQ-U",
+    authDomain: "project-facemash-deab0.firebaseapp.com",
+    projectId: "project-facemash-deab0",
+    storageBucket: "project-facemash-deab0.appspot.com",
+    messagingSenderId: "763262573358",
+    appId: "1:763262573358:web:96a117813b9a944fc0b8bf",
+    measurementId: "G-7ZJNWYLV1G"
+  };
+initializeApp(firebaseConfig);
+const storage = getStorage();
+
+//เอาขึ้น Firebase
+class FileMiddleware {
+  // Attribute filename
+  filename = "";
+
+  // Attribute diskloader
+  // Create object of diskLoader for saving file
+  public readonly diskLoader = multer({
+    // storage = save define folder(disk) to be saved
+    storage: multer.memoryStorage(),
+    //limit file size
+    limits: {
+      fileSize: 67108864, // 64 MByte
+    },
+  });
+}
+
+// POST /upload
+const fileUpload = new FileMiddleware();
+router.post("/upuser", fileUpload.diskLoader.single("file"), async (req, res) => {
+
+  const filename = Date.now() + "-" + Math.round(Math.random() * 10000) + ".png";
+
+  // define saving filename on firebase storage
+  const storageRef = ref(storage, "/images/" + filename);
+  //define file detail
+
+  const metadata = {
+    contentType: req.file!.mimetype
+  }
+
+  //upload to firebase storage
+  const snapshot = await uploadBytesResumable(
+    storageRef,
+    req.file!.buffer,
+    metadata);
+
+  //Return
+  const url = await getDownloadURL(snapshot.ref);
+  res.status(200).json({
+    file: url
+  });
+});
