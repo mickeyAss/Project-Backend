@@ -111,15 +111,34 @@ router.get("/bigbike/:uid_fk", (req, res) => {
 
 router.put("/update/:uid", (req, res) => {
   const uid = +req.params.uid; // รับค่า uid จากพารามิเตอร์ URL
-  const { username,  img, accountname } = req.body; // รับข้อมูลที่ต้องการอัพเดทจาก req.body
+  const { username, img, accountname } = req.body; // รับข้อมูลที่ต้องการอัพเดทจาก req.body
 
   // สร้างคำสั่ง SQL สำหรับการอัพเดทข้อมูล
-  const sql = `
+  let sql = `
     UPDATE users 
-    SET username = ?,  img = ?, accountname = ? 
-    WHERE uid = ?
-  `;
-  const values = [username, img, accountname, uid]; // กำหนดค่าที่จะใส่ลงไปในคำสั่ง SQL
+    SET `;
+  const values = [];
+
+  // ตรวจสอบและเพิ่มฟิลด์ที่มีการอัพเดตลงในคำสั่ง SQL
+  if (username) {
+    sql += "username = ?, ";
+    values.push(username);
+  }
+  if (img) {
+    sql += "img = ?, ";
+    values.push(img);
+  }
+  if (accountname) {
+    sql += "accountname = ?, ";
+    values.push(accountname);
+  }
+
+  // ลบช่องว่างและเครื่องหมาย ',' ที่ไม่จำเป็นท้ายสตริงคำสั่ง SQL
+  sql = sql.slice(0, -2);
+
+  // เพิ่มเงื่อนไข WHERE เพื่อกำหนดให้แก้ไขเฉพาะข้อมูลของผู้ใช้นั้นเท่านั้น
+  sql += " WHERE uid = ?";
+  values.push(uid);
 
   conn.query(sql, values, (err, result) => {
     if (err) {
@@ -140,7 +159,6 @@ router.put("/update/:uid", (req, res) => {
     });
   });
 });
-
 
 //อัพโหลดรูปลง firebase
 //1.connect firebase
