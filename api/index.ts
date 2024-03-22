@@ -109,81 +109,17 @@ router.get("/bigbike/:uid_fk", (req, res) => {
 });
 
 
-router.put("/updateUsername/:uid", (req, res) => {
+router.put("/update/:uid", (req, res) => {
   const uid = +req.params.uid; // รับค่า uid จากพารามิเตอร์ URL
-  const { username, img, accountname } = req.body; // รับข้อมูลที่ต้องการอัพเดทจาก req.body
+  const { username, email, password, img, accountname } = req.body; // รับข้อมูลที่ต้องการอัพเดทจาก req.body
 
   // สร้างคำสั่ง SQL สำหรับการอัพเดทข้อมูล
   const sql = `
     UPDATE users 
-    SET username = ?
+    SET username = ?, email = ?, password = ?, img = ?, accountname = ? 
     WHERE uid = ?
   `;
-  const values = [username ,uid]; // กำหนดค่าที่จะใส่ลงไปในคำสั่ง SQL
-
-  conn.query(sql, values, (err, result) => {
-    if (err) {
-      console.error("Error updating user data:", err);
-      res.status(500).json({ error: "Error updating user data" });
-      return;
-    }
-
-    // ตรวจสอบว่ามีข้อมูลที่ถูกอัพเดทหรือไม่
-    if (result.affectedRows === 0) {
-      res.status(404).json({ error: "User not found" });
-      return;
-    }
-
-    res.status(200).json({
-      message: "Successfully updated user data",
-      updated_user_id: uid
-    });
-  });
-});
-
-router.put("/updateAccountname/:uid", (req, res) => {
-  const uid = +req.params.uid; // รับค่า uid จากพารามิเตอร์ URL
-  const {  img } = req.body; // รับข้อมูลที่ต้องการอัพเดทจาก req.body
-
-  // สร้างคำสั่ง SQL สำหรับการอัพเดทข้อมูล
-  const sql = `
-    UPDATE users 
-    SET  img = ?
-    WHERE uid = ?
-  `;
-  const values = [ img, uid]; // กำหนดค่าที่จะใส่ลงไปในคำสั่ง SQL
-
-  conn.query(sql, values, (err, result) => {
-    if (err) {
-      console.error("Error updating user data:", err);
-      res.status(500).json({ error: "Error updating user data" });
-      return;
-    }
-
-    // ตรวจสอบว่ามีข้อมูลที่ถูกอัพเดทหรือไม่
-    if (result.affectedRows === 0) {
-      res.status(404).json({ error: "User not found" });
-      return;
-    }
-
-    res.status(200).json({
-      message: "Successfully updated user data",
-      updated_user_id: uid
-    });
-  });
-});
-
-router.put("/updateImg/:uid", (req, res) => {
-  const uid = +req.params.uid; // รับค่า uid จากพารามิเตอร์ URL
-  const {  accountname } = req.body; // รับข้อมูลที่ต้องการอัพเดทจาก req.body
-
-  // สร้างคำสั่ง SQL สำหรับการอัพเดทข้อมูล
-  const sql = `
-    UPDATE users 
-    SET  accountname = ? 
-    WHERE uid = ?
-  `;
-  const values = [ accountname, uid]; // กำหนดค่าที่จะใส่ลงไปในคำสั่ง SQL
+  const values = [username, email, password, img, accountname, uid]; // กำหนดค่าที่จะใส่ลงไปในคำสั่ง SQL
 
   conn.query(sql, values, (err, result) => {
     if (err) {
@@ -247,7 +183,7 @@ class FileMiddleware {
 
 // POST /upload
 const fileUpload = new FileMiddleware();
-router.post("/upuser", fileUpload.diskLoader.single("file"), async (req, res) => {
+router.post("/", fileUpload.diskLoader.single("file"), async (req, res) => {
 
   const filename = Date.now() + "-" + Math.round(Math.random() * 10000) + ".png";
 
