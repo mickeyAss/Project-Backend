@@ -254,7 +254,7 @@ class FileMiddleware {
 
 // POST /upload
 const fileUpload = new FileMiddleware();
-router.post("/upuser", fileUpload.diskLoader.single("fileuser"), async (req, res) => {
+router.post("/upuser", fileUpload.diskLoader.single("file"), async (req, res) => {
 
   const filename = Date.now() + "-" + Math.round(Math.random() * 10000) + ".png";
 
