@@ -111,15 +111,15 @@ router.get("/bigbike/:uid_fk", (req, res) => {
 
 router.put("/update/:uid", (req, res) => {
   const uid = +req.params.uid; // รับค่า uid จากพารามิเตอร์ URL
-  const { username, email, password, img, accountname } = req.body; // รับข้อมูลที่ต้องการอัพเดทจาก req.body
+  const { username, img, accountname } = req.body; // รับข้อมูลที่ต้องการอัพเดทจาก req.body
 
   // สร้างคำสั่ง SQL สำหรับการอัพเดทข้อมูล
   const sql = `
     UPDATE users 
-    SET username = ?, email = ?, password = ?, img = ?, accountname = ? 
+    SET username = ?, img = ?, accountname = ? 
     WHERE uid = ?
   `;
-  const values = [username, email, password, img, accountname, uid]; // กำหนดค่าที่จะใส่ลงไปในคำสั่ง SQL
+  const values = [username, img, accountname, uid]; // กำหนดค่าที่จะใส่ลงไปในคำสั่ง SQL
 
   conn.query(sql, values, (err, result) => {
     if (err) {
