@@ -14,7 +14,7 @@ router.get("/", (req, res) => {
 });
 
 router.get("/avatar", (req, res) => {
-  conn.query("SELECT * FROM `avater`", (err, result) => {
+  conn.query("SELECT * FROM `avatar`", (err, result) => {
     res.json(result);
   });
 });
