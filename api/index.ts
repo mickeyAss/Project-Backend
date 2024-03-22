@@ -160,6 +160,53 @@ router.put("/update/:uid", (req, res) => {
   });
 });
 
+router.put("/updatesafety/:uid", (req, res) => {
+  const uid = +req.params.uid; // รับค่า uid จากพารามิเตอร์ URL
+  const { email,password } = req.body; // รับข้อมูลที่ต้องการอัพเดทจาก req.body
+
+  // สร้างคำสั่ง SQL สำหรับการอัพเดทข้อมูล
+  let sql = `
+    UPDATE users 
+    SET `;
+  const values = [];
+
+  // ตรวจสอบและเพิ่มฟิลด์ที่มีการอัพเดตลงในคำสั่ง SQL
+  if (email) {
+    sql += "email = ?, ";
+    values.push(email);
+  }
+  if (password) {
+    sql += "password = ?, ";
+    values.push(password);
+  }
+
+  // ลบช่องว่างและเครื่องหมาย ',' ที่ไม่จำเป็นท้ายสตริงคำสั่ง SQL
+  sql = sql.slice(0, -2);
+
+  // เพิ่มเงื่อนไข WHERE เพื่อกำหนดให้แก้ไขเฉพาะข้อมูลของผู้ใช้นั้นเท่านั้น
+  sql += " WHERE uid = ?";
+  values.push(uid);
+
+  conn.query(sql, values, (err, result) => {
+    if (err) {
+      console.error("Error updating user data:", err);
+      res.status(500).json({ error: "Error updating user data" });
+      return;
+    }
+
+    // ตรวจสอบว่ามีข้อมูลที่ถูกอัพเดทหรือไม่
+    if (result.affectedRows === 0) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.status(200).json({
+      message: "Successfully updated user data",
+      updated_user_id: uid
+    });
+  });
+});
+
 //อัพโหลดรูปลง firebase
 //1.connect firebase
 import { initializeApp } from "firebase/app";
