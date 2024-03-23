@@ -127,30 +127,16 @@ router.get("/:token", (req, res) => {
 router.get("/bigbike/:uid", (req, res) => {
   const uid_fk = req.params.uid;
   try {
-    const sql = `SELECT bigbike.*, users.*
-                FROM bigbike
-                RIGHT JOIN users ON bigbike.uid_fk = users.uid
-                WHERE uid = ?`;
+    const sql = ` SELECT bigbike.*, users.*
+    FROM bigbike
+    INNER JOIN users ON bigbike.uid_fk = users.uid
+     WHERE uid = ?`;
     conn.query(sql, [uid_fk], (err, result) => {
       if (err) {
         console.error("Error:", err);
-        res.status(500).json({ status: "error", message: "Internal Server Error" });
-        return;
-      }
-      if (result.length === 0) {
-        // หากไม่พบข้อมูลในตาราง bigbike ให้แสดงข้อมูลของผู้ใช้ทั้งหมด
-        conn.query("SELECT * FROM users WHERE uid = ?", [uid_fk], (err, userData) => {
-          if (err) {
-            console.error("Error:", err);
-            res.status(500).json({ status: "error", message: "Internal Server Error" });
-            return;
-          }
-          if (userData.length === 0) {
-            res.status(404).json({ status: "error", message: "User not found" });
-            return;
-          }
-          res.json(userData);
-        });
+        res
+          .status(500)
+          .json({ status: "error", message: "Internal Server Error" });
         return;
       }
       res.json(result); // ส่งข้อมูล bigbike ทั้งหมดที่ตรงเงื่อนไขกลับไปยัง client
