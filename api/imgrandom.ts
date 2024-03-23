@@ -2,17 +2,6 @@ import express from "express";
 import { conn } from "../dbconnect";
 export const router = express.Router();
 
-router.get("/getBB/:bid", (req, res) => {
-  const bid = req.params.bid;
-  conn.query("SELECT * FROM `bigbike` WHERE bid = ?", [bid], (err, result) => {
-    if (err) {
-      console.error("Error retrieving BigBike data:", err);
-      res.status(500).json({ error: "Error retrieving BigBike data" });
-      return;
-    }
-    res.json(result);
-  });
-});
 
 // insert คะแนนที่เพิ่ม-ลดของแต่ละ bid ลง table vote
 router.post("/vote", (req, res) => {
