@@ -19,6 +19,22 @@ router.get("/avatar", (req, res) => {
   });
 });
 
+router.get("/biguser/:bid", (req, res) => {
+  const bid = req.params.bid;
+  const sql = `
+    SELECT bigbike.*, users.*
+    FROM bigbike
+    INNER JOIN users ON bigbike.uid_fk = users.uid
+    WHERE bigbike.bid = ?`;
+  conn.query(sql, [bid], (err, result) => {
+    if (err) {
+      console.error("Error fetching data from bigbike and users:", err);
+      res.status(500).json({ error: "Error fetching data" });
+    } else {
+      res.json(result);
+    }
+  });
+});
 
 router.post("/register", (req, res) => {
   conn.query(

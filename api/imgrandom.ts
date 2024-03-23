@@ -69,6 +69,7 @@ router.get("/votesome/:bid", (req, res) => {
   });
 });
 
+
 //แสดงคะแนนรวม 7 วันย้อนหลัง
 router.get("/totalScore/:bid", (req, res) => {
   const { bid } = req.params;
