@@ -15,6 +15,26 @@ router.get("/", (req, res) => {
   });
 });
 
+router.get("/biduser/:uid", (req, res) => {
+  const uid = req.params.uid;
+
+  // ค้นหาข้อมูลผู้ใช้ที่ไม่ใช่ admin โดยใช้ uid
+  const sql = "SELECT * FROM `users` WHERE uid = ?";
+  conn.query(sql, [uid], (err, result) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    if (result.length === 0) {
+      // หากไม่มีผู้ใช้ที่ไม่ใช่ admin ที่มี uid ที่ระบุ
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+    // ส่งข้อมูลผู้ใช้ที่ไม่ใช่ admin ที่มี uid ที่ระบุกลับไปยัง client
+    res.json(result);
+  });
+});
+
 router.get("/avatar", (req, res) => {
   conn.query("SELECT * FROM `avatar`", (err, result) => {
     res.json(result);
