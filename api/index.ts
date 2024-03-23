@@ -45,14 +45,10 @@ router.post("/register", (req, res) => {
 });
 
 router.post("/login", (req, res) => {
-  //กำหนดเส้นทางสำหรับการ request ไปที่/login ซึ่งจะเรียกใช้ฟังก์ชันที่รับ request และ response เป็นพารามิเตอร์.
-  const { email, password } = req.body; //การนำข้อมูลที่ส่งมาใน req.body มาเก็บไว้ใน ตัวแปล email and password
+  const { email, password } = req.body;
 
-  // ตรวจสอบว่ามีอีเมลและรหัสผ่าน ในการrequest มาหรือไม่
   if (email && password) {
-    //ถ้ามี email และ password
     conn.query(
-      //จะทำการ ร้องขอจากฐานข้อมูลเพื่อตรวจจสอบว่ามี email และ password ที่ตรงกับที่ระบุมาหรือไม่
       "SELECT * FROM users WHERE email=? AND password=?",
       [email, password],
       (err, result) => {
@@ -64,15 +60,23 @@ router.post("/login", (req, res) => {
           res.json({ result: false, message: "Invalid email or password" });
           return;
         }
-        //ถ้ามีผู้ใช้ที่ตรงกันจะทำการสร้าง json web token ด้วยข้อมูล email
-        var token = jwt.sign({ email: result[0].email }, secret, {
-          expiresIn: "1h",
-        });
-        res.json({ result: true, data: { token } });
+        // เพิ่มตรวจสอบประเภทของผู้ใช้
+        const userType = result[0].type; // สมมติว่าชนิดของผู้ใช้ถูกเก็บไว้ในฟิลด์ "type" ในฐานข้อมูล
+        var token;
+        if (userType === 'admin') {
+          token = jwt.sign({ email: result[0].email, type: 'admin' }, secret, {
+            expiresIn: "1h",
+          });
+        } else {
+          token = jwt.sign({ email: result[0].email, type: 'user' }, secret, {
+            expiresIn: "1h",
+          });
+        }
+        res.json({ result: true, userType, data: { token } });
       }
     );
   } else {
-    res.json({ result: false, message: "Email   and password are required" });
+    res.json({ result: false, message: "Email and password are required" });
   }
 });
 
