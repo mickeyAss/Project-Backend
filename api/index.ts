@@ -6,7 +6,11 @@ const secret = "Fullstack-Login-2021";
 import multer from "multer";
 
 router.get("/", (req, res) => {
-  conn.query("SELECT * FROM `users`", (err, result) => {
+  conn.query("SELECT * FROM `users` WHERE type != 'admin'", (err, result) => {
+    if (err) {
+      res.json({ error: err.message });
+      return;
+    }
     res.json(result);
   });
 });
