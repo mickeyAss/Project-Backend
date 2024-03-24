@@ -117,6 +117,7 @@ router.get("/votesomee", (req, res) => {
   });
 });
 
+
 router.get("/yesterday", (req, res) => {
   const sql = `
     SELECT bigbike.*, users.*, SUM(COALESCE(vote.score, 0)) AS total_score
@@ -138,7 +139,7 @@ router.get("/yesterday", (req, res) => {
         } else {
           result[index].ranking = rank++;
         }
-        const updateRankSQL = `UPDATE bigbike SET ranking = ${result[index].ranking} WHERE bid = ${result[index].bid}`;
+        const updateRankSQL = `UPDATE bigbike SET rankingyester = ${result[index].ranking} WHERE bid = ${result[index].bid}`;
         conn.query(updateRankSQL, (updateErr, updateResult) => {
           if (updateErr) {
             console.error("Error updating ranking for bid", result[index].bid, updateErr);
