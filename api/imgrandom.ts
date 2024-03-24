@@ -117,6 +117,40 @@ router.get("/votesomee", (req, res) => {
   });
 });
 
+router.get("/topten", (req, res) => {
+  const sql = `
+    SELECT bigbike.*, users.*, SUM(COALESCE(vote.score, 0)) AS total_score
+    FROM bigbike
+    LEFT JOIN vote ON bigbike.bid = vote.bid_fk
+    LEFT JOIN users ON bigbike.uid_fk = users.uid
+    GROUP BY bigbike.bid
+    ORDER BY total_score DESC 
+    LIMIT 10`;
+
+  conn.query(sql, (err, result) => {
+    if (err) {
+      res.json(err);
+    } else {
+      let rank = 1;
+      result.forEach((item: any, index: number) => {
+        if (index > 0 && result[index].total_score === result[index - 1].total_score) {
+          result[index].ranking = result[index - 1].ranking;
+        } else {
+          result[index].ranking = rank++;
+        }
+        const updateRankSQL = `UPDATE bigbike SET ranking = ${result[index].ranking} WHERE bid = ${result[index].bid}`;
+        conn.query(updateRankSQL, (updateErr, updateResult) => {
+          if (updateErr) {
+            console.error("Error updating ranking for bid", result[index].bid, updateErr);
+            res.status(500).json({ error: "Failed to update ranking for some bids" });
+          }
+        });
+      });
+      res.json(result);
+    }
+  });
+});
+
 //แสดงข้อมูลรถใน table bigbike และคะแนนในtable vote ของแต่ละ bid
 router.get("/votesome/:bid", (req, res) => {
   const { bid } = req.params;
