@@ -56,27 +56,61 @@ router.get("/votesome", (req, res) => {
   });
 });
 
-router.get("/votesomee", (req, res) => {
+// router.get("/votesomee", (req, res) => {
 
+//   const sql = `
+//     SELECT bigbike.*, users.*, SUM(COALESCE(vote.score, 0)) AS total_score
+//     FROM bigbike
+//     LEFT JOIN vote ON bigbike.bid = vote.bid_fk
+//     LEFT JOIN users ON bigbike.uid_fk = users.uid
+//     GROUP BY bigbike.bid
+//     ORDER BY total_score DESC`; // เรียงลำดับจากมากไปน้อยตาม total_score
+//   conn.query(sql, (err, result) => {
+//     if (err) {
+//       res.json(err);
+//     } else {
+//       let rank = 1; // เริ่มต้นที่อันดับ 1
+//       result.forEach((item: any, index: number) => {
+//         if (index > 0 && result[index].total_score === result[index - 1].total_score) {
+//           // ถ้าคะแนนเท่ากันกับรายการก่อนหน้า ให้ใช้อันดับเดียวกัน
+//           result[index].rank = result[index - 1].rank;
+//         } else {
+//           result[index].rank = rank++; // เพิ่มอันดับเรื่อยๆ
+//         }
+//       });
+//       res.json(result);
+//     }
+//   });
+// });
+
+
+router.get("/votesomee", (req, res) => {
   const sql = `
     SELECT bigbike.*, users.*, SUM(COALESCE(vote.score, 0)) AS total_score
     FROM bigbike
     LEFT JOIN vote ON bigbike.bid = vote.bid_fk
     LEFT JOIN users ON bigbike.uid_fk = users.uid
     GROUP BY bigbike.bid
-    ORDER BY total_score DESC`; // เรียงลำดับจากมากไปน้อยตาม total_score
+    ORDER BY total_score DESC`;
+
   conn.query(sql, (err, result) => {
     if (err) {
       res.json(err);
     } else {
-      let rank = 1; // เริ่มต้นที่อันดับ 1
+      let rank = 1;
       result.forEach((item: any, index: number) => {
         if (index > 0 && result[index].total_score === result[index - 1].total_score) {
-          // ถ้าคะแนนเท่ากันกับรายการก่อนหน้า ให้ใช้อันดับเดียวกัน
-          result[index].rank = result[index - 1].rank;
+          result[index].ranking = result[index - 1].ranking;
         } else {
-          result[index].rank = rank++; // เพิ่มอันดับเรื่อยๆ
+          result[index].ranking = rank++;
         }
+        const updateRankSQL = `UPDATE bigbike SET ranking = ${result[index].ranking} WHERE bid = ${result[index].bid}`;
+        conn.query(updateRankSQL, (updateErr, updateResult) => {
+          if (updateErr) {
+            console.error("Error updating ranking for bid", result[index].bid, updateErr);
+            res.status(500).json({ error: "Failed to update ranking for some bids" });
+          }
+        });
       });
       res.json(result);
     }
@@ -165,6 +199,28 @@ router.put("/updatescore/:bid", (req, res) => {
   );
 });
 
+router.put("/updatescore/:bid", (req, res) => {
+  let bid = +req.params.bid;
+  let rank = req.body.rank;
+
+  // ตรวจสอบข้อมูลที่ได้รับ
+  console.log("Received data:", bid, rank);
+
+  // อัปเดตคะแนนรวมลงในฐานข้อมูล bigbike
+  conn.query(
+    "UPDATE bigbike SET `rank` = ? WHERE `bid` = ?",
+    [ rank,bid],
+    (err, result) => {
+      if (err) {
+        console.error("Error updating total score:", err);
+        res.status(500).json({ error: "Error updating total score" });
+      } else {
+        console.log("Total score updated successfully");
+        res.status(200).json({ message: "Total score updated successfully" });
+      }
+    }
+  );
+});
 
 
 //ดึงข้อมูลจากมากไปน้อยแค่10อันดับ
