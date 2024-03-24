@@ -147,11 +147,11 @@ router.put("/updatescore/:bid", (req, res) => {
   let rank = req.body.rank;
 
   // ตรวจสอบข้อมูลที่ได้รับ
-  console.log("Received data:", bid, scsum,rank);
+  console.log("Received data:", bid, scsum, rank);
 
   // อัปเดตคะแนนรวมลงในฐานข้อมูล bigbike
   conn.query(
-    "UPDATE bigbike SET scsum = ? AND rank = ? WHERE bid = ?",
+    "UPDATE bigbike SET scsum = ?, rank = ? WHERE bid = ?",
     [scsum, rank, bid],
     (err, result) => {
       if (err) {
