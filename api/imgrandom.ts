@@ -57,7 +57,8 @@ router.get("/votesome", (req, res) => {
 });
 
 router.get("/votesomee", (req, res) => {
-  const uidna = req.query.uid;
+  const uidna = req.query.uid; // รับค่า uid จาก query parameters
+
   const sql = `
     SELECT bigbike.*, users.*, SUM(COALESCE(vote.score, 0)) AS total_score
     FROM bigbike
@@ -65,7 +66,7 @@ router.get("/votesomee", (req, res) => {
     LEFT JOIN users ON bigbike.uid_fk = users.uid
     GROUP BY bigbike.bid
     ORDER BY total_score DESC`; // เรียงลำดับจากมากไปน้อยตาม total_score
-  conn.query(sql, (err, result) => {
+  conn.query(sql,  [uidna], (err, result) => {
     if (err) {
       res.json(err);
     } else {
