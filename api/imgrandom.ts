@@ -57,6 +57,7 @@ router.get("/votesome", (req, res) => {
 });
 
 router.get("/votesomee", (req, res) => {
+  const uidna = req.query.uid;
   const sql = `
     SELECT bigbike.*, users.*, SUM(COALESCE(vote.score, 0)) AS total_score
     FROM bigbike
@@ -81,6 +82,7 @@ router.get("/votesomee", (req, res) => {
     }
   });
 });
+
 //แสดงข้อมูลรถใน table bigbike และคะแนนในtable vote ของแต่ละ bid
 router.get("/votesome/:bid", (req, res) => {
   const { bid } = req.params;
