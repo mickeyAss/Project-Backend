@@ -144,14 +144,15 @@ router.get("/totalScore/:bid", (req, res) => {
 router.put("/updatescore/:bid", (req, res) => {
   let bid = +req.params.bid;
   let scsum = req.body.scsum;
+  let rank = req.body.scsum;
 
   // ตรวจสอบข้อมูลที่ได้รับ
-  console.log("Received data:", bid, scsum);
+  console.log("Received data:", bid, scsum, rank);
 
   // อัปเดตคะแนนรวมลงในฐานข้อมูล bigbike
   conn.query(
-    "UPDATE bigbike SET scsum = ? WHERE bid = ?",
-    [scsum, bid],
+    "UPDATE bigbike SET `scsum` = ?, `rank` = ? WHERE `bid` = ?",
+    [scsum, rank,bid],
     (err, result) => {
       if (err) {
         console.error("Error updating total score:", err);
@@ -163,6 +164,7 @@ router.put("/updatescore/:bid", (req, res) => {
     }
   );
 });
+
 
 
 //ดึงข้อมูลจากมากไปน้อยแค่10อันดับ
