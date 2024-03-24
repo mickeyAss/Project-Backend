@@ -147,10 +147,20 @@ router.get("/:token", (req, res) => {
 router.get("/bigbike/:uid", (req, res) => {
   const uid_fk = req.params.uid;
   try {
-    const sql = ` SELECT bigbike.*, users.*
-    FROM bigbike
-    INNER JOIN users ON bigbike.uid_fk = users.uid
-     WHERE uid = ?`;
+    const sql = `SELECT bigbike.*, users.*, 
+                CASE 
+                    WHEN bigbike.rankingyester < bigbike.ranking THEN bigbike.ranking - bigbike.rankingyester
+                    WHEN bigbike.rankingyester > bigbike.ranking THEN bigbike.rankingyester - bigbike.ranking
+                    ELSE 0
+                END AS rank_difference,
+                CASE 
+                    WHEN bigbike.rankingyester < bigbike.ranking THEN 'up' 
+                    WHEN bigbike.rankingyester > bigbike.ranking THEN 'down' 
+                    ELSE 'same' 
+                END AS rank_change
+                FROM bigbike
+                INNER JOIN users ON bigbike.uid_fk = users.uid
+                WHERE uid = ?`;
     conn.query(sql, [uid_fk], (err, result) => {
       if (err) {
         console.error("Error:", err);
