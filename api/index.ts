@@ -154,8 +154,8 @@ router.get("/bigbike/:uid", (req, res) => {
                     ELSE 0
                 END AS rank_difference,
                 CASE 
-                    WHEN bigbike.rankingyester < bigbike.ranking THEN 'เพิ่มขึ้นจากเมื่อวาน' 
-                    WHEN bigbike.rankingyester > bigbike.ranking THEN 'ลดลงจากเมื่อวาน' 
+                    WHEN bigbike.rankingyester < bigbike.ranking THEN 'ลดลงจากเมื่อวาน' 
+                    WHEN bigbike.rankingyester > bigbike.ranking THEN 'เพิ่มขึ้นจากเมื่อวาน' 
                     ELSE 'same' 
                 END AS rank_change
                 FROM bigbike
