@@ -144,7 +144,7 @@ router.get("/totalScore/:bid", (req, res) => {
 router.put("/updatescore/:bid", (req, res) => {
   let bid = +req.params.bid;
   let scsum = req.body.scsum;
-  let rank = req.body.scsum;
+  let rank = req.body.rank;
 
   // ตรวจสอบข้อมูลที่ได้รับ
   console.log("Received data:", bid, scsum, rank);
