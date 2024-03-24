@@ -18,7 +18,7 @@ router.get("/getBB/:bid", (req, res) => {
 
 // insert คะแนนที่เพิ่ม-ลดของแต่ละ bid ลง table vote
 router.post("/vote", (req, res) => {
-  const { uid_fk, bid_fk, score, date } = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
+  const { uid_fk, bid_fk, score, date} = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
 
   // ตรวจสอบข้อมูลที่ได้รับ
   console.log("Received data:", uid_fk, bid_fk, score, date);
@@ -57,7 +57,6 @@ router.get("/votesome", (req, res) => {
 });
 
 router.get("/votesomee", (req, res) => {
-  const uidna = req.query.uid; // รับค่า uid จาก query parameters
 
   const sql = `
     SELECT bigbike.*, users.*, SUM(COALESCE(vote.score, 0)) AS total_score
@@ -66,7 +65,7 @@ router.get("/votesomee", (req, res) => {
     LEFT JOIN users ON bigbike.uid_fk = users.uid
     GROUP BY bigbike.bid
     ORDER BY total_score DESC`; // เรียงลำดับจากมากไปน้อยตาม total_score
-  conn.query(sql,  [uidna], (err, result) => {
+  conn.query(sql, (err, result) => {
     if (err) {
       res.json(err);
     } else {
@@ -145,14 +144,15 @@ router.get("/totalScore/:bid", (req, res) => {
 router.put("/updatescore/:bid", (req, res) => {
   let bid = +req.params.bid;
   let scsum = req.body.scsum;
+  let rank = req.body.rank;
 
   // ตรวจสอบข้อมูลที่ได้รับ
-  console.log("Received data:", bid, scsum);
+  console.log("Received data:", bid, scsum,rank);
 
   // อัปเดตคะแนนรวมลงในฐานข้อมูล bigbike
   conn.query(
-    "UPDATE bigbike SET scsum = ? WHERE bid = ?",
-    [scsum, bid],
+    "UPDATE bigbike SET scsum = ? AND rank = ? WHERE bid = ?",
+    [scsum, rank, bid],
     (err, result) => {
       if (err) {
         console.error("Error updating total score:", err);
