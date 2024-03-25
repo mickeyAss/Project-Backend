@@ -2,7 +2,6 @@ import express from "express";
 import { conn } from "../dbconnect";
 export const router = express.Router();
 
-
 router.get("/getBB/:bid", (req, res) => {
   const bid = req.params.bid;
   conn.query("SELECT * FROM `bigbike` WHERE bid = ?", [bid], (err, result) => {
@@ -15,10 +14,9 @@ router.get("/getBB/:bid", (req, res) => {
   });
 });
 
-
 // insert คะแนนที่เพิ่ม-ลดของแต่ละ bid ลง table vote
 router.post("/vote", (req, res) => {
-  const { uid_fk, bid_fk, score, date} = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
+  const { uid_fk, bid_fk, score, date } = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
 
   // ตรวจสอบข้อมูลที่ได้รับ
   console.log("Received data:", uid_fk, bid_fk, score, date);
@@ -83,7 +81,6 @@ router.get("/votesome", (req, res) => {
 //   });
 // });
 
-
 router.get("/votesomee", (req, res) => {
   const sql = `
     SELECT bigbike.*, users.*, SUM(COALESCE(vote.score, 0)) AS total_score
@@ -99,7 +96,10 @@ router.get("/votesomee", (req, res) => {
     } else {
       let rank = 1;
       result.forEach((item: any, index: number) => {
-        if (index > 0 && result[index].total_score === result[index - 1].total_score) {
+        if (
+          index > 0 &&
+          result[index].total_score === result[index - 1].total_score
+        ) {
           result[index].ranking = result[index - 1].ranking;
         } else {
           result[index].ranking = rank++;
@@ -107,8 +107,14 @@ router.get("/votesomee", (req, res) => {
         const updateRankSQL = `UPDATE bigbike SET ranking = ${result[index].ranking} WHERE bid = ${result[index].bid}`;
         conn.query(updateRankSQL, (updateErr, updateResult) => {
           if (updateErr) {
-            console.error("Error updating ranking for bid", result[index].bid, updateErr);
-            res.status(500).json({ error: "Failed to update ranking for some bids" });
+            console.error(
+              "Error updating ranking for bid",
+              result[index].bid,
+              updateErr
+            );
+            res
+              .status(500)
+              .json({ error: "Failed to update ranking for some bids" });
           }
         });
       });
@@ -116,7 +122,6 @@ router.get("/votesomee", (req, res) => {
     }
   });
 });
-
 
 router.get("/yesterday", (req, res) => {
   const sql = `
@@ -134,7 +139,10 @@ router.get("/yesterday", (req, res) => {
     } else {
       let rank = 1;
       result.forEach((item: any, index: number) => {
-        if (index > 0 && result[index].total_score === result[index - 1].total_score) {
+        if (
+          index > 0 &&
+          result[index].total_score === result[index - 1].total_score
+        ) {
           result[index].ranking = result[index - 1].ranking;
         } else {
           result[index].ranking = rank++;
@@ -142,8 +150,14 @@ router.get("/yesterday", (req, res) => {
         const updateRankSQL = `UPDATE bigbike SET rankingyester = ${result[index].ranking} WHERE bid = ${result[index].bid}`;
         conn.query(updateRankSQL, (updateErr, updateResult) => {
           if (updateErr) {
-            console.error("Error updating ranking for bid", result[index].bid, updateErr);
-            res.status(500).json({ error: "Failed to update ranking for some bids" });
+            console.error(
+              "Error updating ranking for bid",
+              result[index].bid,
+              updateErr
+            );
+            res
+              .status(500)
+              .json({ error: "Failed to update ranking for some bids" });
           }
         });
       });
@@ -151,8 +165,6 @@ router.get("/yesterday", (req, res) => {
     }
   });
 });
-
-
 
 router.get("/topten", (req, res) => {
   const sql = `
@@ -170,19 +182,30 @@ router.get("/topten", (req, res) => {
     } else {
       let rank = 1;
       result.forEach((item: any, index: number) => {
-        if (index > 0 && result[index].total_score === result[index - 1].total_score) {
+        if (
+          index > 0 &&
+          result[index].total_score === result[index - 1].total_score
+        ) {
           result[index].ranking = result[index - 1].ranking;
         } else {
           result[index].ranking = rank++;
         }
-        const updateRankSQL = `UPDATE bigbike SET ranking = ${result[index].ranking} WHERE bid = ${result[index].bid}`;
-        conn.query(updateRankSQL, (updateErr, updateResult) => {
-          if (updateErr) {
-            console.error("Error updating ranking for bid", result[index].bid, updateErr);
-            res.status(500).json({ error: "Failed to update ranking for some bids" });
-          }
-        });
+
+        // Calculate rank_difference
+        result[index].rank_difference =
+          result[index].rankingyester < result[index].ranking
+            ? result[index].ranking - result[index].rankingyester
+            : result[index].rankingyester - result[index].ranking;
+
+        // Determine rank_change
+        result[index].rank_change =
+          result[index].rankingyester < result[index].ranking
+            ? "ลดลงจากเมื่อวาน"
+            : result[index].rankingyester > result[index].ranking
+            ? "เพิ่มขึ้นจากเมื่อวาน"
+            : "same";
       });
+
       res.json(result);
     }
   });
@@ -207,7 +230,6 @@ router.get("/votesome/:bid", (req, res) => {
   });
 });
 
-
 //แสดงคะแนนรวม 7 วันย้อนหลัง
 router.get("/totalScore/:bid", (req, res) => {
   const { bid } = req.params;
@@ -224,7 +246,7 @@ router.get("/totalScore/:bid", (req, res) => {
   LEFT JOIN vote ON bigbike.bid = vote.bid_fk
   WHERE bigbike.bid = ?
   GROUP BY bigbike.bid, DATE(vote.date), vote.date
-  ORDER BY DATE(vote.date) ASC`
+  ORDER BY DATE(vote.date) ASC`;
 
   conn.query(sql, [bid, bid], (err, result) => {
     if (err) {
@@ -269,9 +291,6 @@ router.put("/updatescore/:bid", (req, res) => {
   );
 });
 
-
-
-
 //ดึงข้อมูลจากมากไปน้อยแค่10อันดับ
 router.get("/", (req, res) => {
   conn.query(
@@ -286,8 +305,6 @@ router.get("/", (req, res) => {
     }
   );
 });
-
-
 
 //ดึงข้อมูลของแต่ละ bid
 router.get("/getBid/:bid", (req, res) => {

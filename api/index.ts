@@ -177,6 +177,8 @@ router.get("/bigbike/:uid", (req, res) => {
   }
 });
 
+
+
 router.put("/update/:uid", (req, res) => {
   const uid = +req.params.uid; // รับค่า uid จากพารามิเตอร์ URL
   const { username, img, accountname } = req.body; // รับข้อมูลที่ต้องการอัพเดทจาก req.body
