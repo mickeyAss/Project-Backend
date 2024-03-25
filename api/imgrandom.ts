@@ -210,6 +210,49 @@ router.get("/topten", (req, res) => {
     }
   });
 });
+router.get("/admintopten", (req, res) => {
+  const sql = `
+    SELECT bigbike.*, users.*, SUM(COALESCE(vote.score, 0)) AS total_score
+    FROM bigbike
+    LEFT JOIN vote ON bigbike.bid = vote.bid_fk
+    LEFT JOIN users ON bigbike.uid_fk = users.uid
+    GROUP BY bigbike.bid
+    ORDER BY total_score DESC `;
+
+  conn.query(sql, (err, result) => {
+    if (err) {
+      res.json(err);
+    } else {
+      let rank = 1;
+      result.forEach((item: any, index: number) => {
+        if (
+          index > 0 &&
+          result[index].total_score === result[index - 1].total_score
+        ) {
+          result[index].ranking = result[index - 1].ranking;
+        } else {
+          result[index].ranking = rank++;
+        }
+
+        // Calculate rank_difference
+        result[index].rank_difference =
+          result[index].rankingyester < result[index].ranking
+            ? result[index].ranking - result[index].rankingyester
+            : result[index].rankingyester - result[index].ranking;
+
+        // Determine rank_change
+        result[index].rank_change =
+          result[index].rankingyester < result[index].ranking
+            ? "ลดลงจากเมื่อวาน"
+            : result[index].rankingyester > result[index].ranking
+            ? "เพิ่มขึ้นจากเมื่อวาน"
+            : "same";
+      });
+
+      res.json(result);
+    }
+  });
+});
 
 //แสดงข้อมูลรถใน table bigbike และคะแนนในtable vote ของแต่ละ bid
 router.get("/votesome/:bid", (req, res) => {
