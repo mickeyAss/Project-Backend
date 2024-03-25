@@ -14,17 +14,6 @@ router.get("/getBB/:bid", (req, res) => {
   });
 });
 
-router.get("/time", (req, res) => {
-  conn.query("SELECT * FROM `timevote`",  (err, result) => {
-    if (err) {
-      console.error("Error retrieving BigBike data:", err);
-      res.status(500).json({ error: "Error retrieving BigBike data" });
-      return;
-    }
-    res.json(result);
-  });
-});
-
 // insert คะแนนที่เพิ่ม-ลดของแต่ละ bid ลง table vote
 router.post("/vote", (req, res) => {
   const { uid_fk, bid_fk, score, date } = req.body; // รับไอดีของรูปภาพและคะแนนจากข้อมูลที่ส่งมา
