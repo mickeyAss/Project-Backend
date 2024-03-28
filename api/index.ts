@@ -5,6 +5,7 @@ var jwt = require("jsonwebtoken");
 const secret = "Fullstack-Login-2021";
 import multer from "multer";
 
+//ดึงข้อมูลผู้ใช้โดยไม่เอาข้อมูลของ admin 
 router.get("/", (req, res) => {
   conn.query("SELECT * FROM `users` WHERE type != 'admin'", (err, result) => {
     if (err) {
@@ -35,6 +36,7 @@ router.get("/biduser/:uid", (req, res) => {
   });
 });
 
+//ดึงรูป Avatar
 router.get("/avatar", (req, res) => {
   conn.query("SELECT * FROM `avatar`", (err, result) => {
     res.json(result);
@@ -68,6 +70,7 @@ router.post("/register", (req, res) => {
   );
 });
 
+// login
 router.post("/login", (req, res) => {
   const { email, password } = req.body;
 
@@ -104,6 +107,7 @@ router.post("/login", (req, res) => {
   }
 });
 
+//เช็ค token
 router.post("/authen", (req, res) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
@@ -114,6 +118,7 @@ router.post("/authen", (req, res) => {
   }
 });
 
+//ดึงข้อมูลผู้ใช่ตาม token
 router.get("/:token", (req, res) => {
   const token = req.params.token; // รับ token จากพารามิเตอร์ URL
   try {
@@ -143,6 +148,7 @@ router.get("/:token", (req, res) => {
     res.status(401).json({ status: "error", message: "Unauthorized" }); // ส่งข้อความ Unauthorized หาก token ไม่ถูกต้อง
   }
 });
+
 
 router.get("/bigbike/:uid", (req, res) => {
   const uid_fk = req.params.uid;

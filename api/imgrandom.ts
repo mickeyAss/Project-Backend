@@ -54,33 +54,7 @@ router.get("/votesome", (req, res) => {
   });
 });
 
-// router.get("/votesomee", (req, res) => {
-
-//   const sql = `
-//     SELECT bigbike.*, users.*, SUM(COALESCE(vote.score, 0)) AS total_score
-//     FROM bigbike
-//     LEFT JOIN vote ON bigbike.bid = vote.bid_fk
-//     LEFT JOIN users ON bigbike.uid_fk = users.uid
-//     GROUP BY bigbike.bid
-//     ORDER BY total_score DESC`; // เรียงลำดับจากมากไปน้อยตาม total_score
-//   conn.query(sql, (err, result) => {
-//     if (err) {
-//       res.json(err);
-//     } else {
-//       let rank = 1; // เริ่มต้นที่อันดับ 1
-//       result.forEach((item: any, index: number) => {
-//         if (index > 0 && result[index].total_score === result[index - 1].total_score) {
-//           // ถ้าคะแนนเท่ากันกับรายการก่อนหน้า ให้ใช้อันดับเดียวกัน
-//           result[index].rank = result[index - 1].rank;
-//         } else {
-//           result[index].rank = rank++; // เพิ่มอันดับเรื่อยๆ
-//         }
-//       });
-//       res.json(result);
-//     }
-//   });
-// });
-
+// แสดงข้อมูลรถใน table bigbike และอัพเดทranking  เมื่อเรียกเส้นAPI นี้
 router.get("/votesomee", (req, res) => {
   const sql = `
     SELECT bigbike.*, users.*, SUM(COALESCE(vote.score, 0)) AS total_score

@@ -105,6 +105,7 @@ router.post("/insert", (req, res) => {
   });
 });
 
+// นับจำนวนรูปภาพ ที่อัพโหลด
 router.get("/image-count/:uid", (req, res) => {
   const uid = req.params.uid;
 
